@@ -4,13 +4,11 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * 参赛者:会话成员在某次模式实例内的视图(uuid、生命周期标记,
- * 02-核心概念 §2.2-Participant 行)。
+ * 参赛者:会话成员在某次模式实例内的视图(uuid、生命周期标记,§2.2)。
  *
- * <p>★ 玩法语义字段(分组/职能等)不在参赛者上——那些状态归组件所有,
- * 经组件强类型读口查询。{@link ParticipantState#JOINING} 是设计案点名的
- * 初始标记(名册原地位移时全体成员就地成为参赛者,§3.2-B4);
- * 其余值为最小可用集,阶段 2/4 扩充。
+ * <p>玩法语义字段(分组/职能等)不在参赛者上——那些状态归组件所有,
+ * 经组件强类型读口查询。{@link ParticipantState#JOINING} 是名册原地位移时的
+ * 初始标记(全体成员就地成为参赛者,§3.2-B4)。
  */
 public final class Participant {
 

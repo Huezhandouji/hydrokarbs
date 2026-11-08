@@ -17,18 +17,13 @@ import com.hydrokarbs.engine.session.SessionId;
 import com.hydrokarbs.map.MapDefinition;
 
 /**
- * 世界端口假件(2.3 切换链路离线测试):获取行为可注入(即时成功/注入失败——
- * 超时与失败共用同一完成回调分支,注入 {@code TimeoutException} 即覆盖超时路径);
- * 释放为空操作;会话销毁计数并按序记录被销毁的会话 id(解散触发断言用)。
- * 世界对象用动态代理占位(测试类型签名引用 Bukkit 类型、传代理不碰
- * Bukkit 静态——句柄只存引用不调方法)。
+ * 世界端口假件:获取行为可注入(即时成功/注入失败——超时与失败共用同一完成回调
+ * 分支,注入 {@code TimeoutException} 即覆盖超时路径);释放为空操作;会话销毁计数
+ * 并按序记录被销毁的会话 id。世界对象用动态代理占位(不碰 Bukkit 静态)。
  *
- * <p>★v1.9(27 号)增补(离线清场断言的前提,缺则同世界判据恒 false、release 无序可断):
- * ① {@link #sticky(List)} 工厂——同 (mapId, 会话) 键幂等返回<b>同句柄</b>(内部表缓存,
- * 镜像真端口 WorldPortImpl 表命中行为;既有 {@link #immediate()} 每次新句柄 + 新代理,
- * 原样不动防既有断言破);② 可选接缝时序录 {@code seamLog}——release/discardSession
- * 按调用序追加,与清场记录 lambda 同写一份列表时,主线程直跑(mainExecutor = Runnable::run)
- * 下列表顺序即真实调用序,「清场先于 release/discardSession」由此可断。
+ * <p>★v1.9 增补(离线清场断言前提):①{@link #sticky(List)} 工厂——同 (mapId, 会话)
+ * 键幂等返回同句柄(镜像真端口表命中;{@link #immediate()} 原样不动);②接缝时序录
+ * {@code seamLog}——release/discardSession 按调用序追加,主线程直跑时列表顺序即真实调用序。
  */
 public final class FakeWorldPort implements WorldPort {
 

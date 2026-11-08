@@ -8,28 +8,18 @@ import com.hydrokarbs.engine.AttributeBag;
 import com.hydrokarbs.engine.port.ResetStrategy;
 
 /**
- * 地图声明:不可变 record(★v1.8 瘦身,26 号修正案议题:声明按路径直交——
- * 世界目录 = 声明自带 {@code worldDirectoryPath},「模板寄居框架数据目录
- * {@code maps/templates/}」约定退场)。
+ * 地图声明:不可变 record,三样纯静态值——世界目录路径 + 副本处置策略 + 词料
+ * 容器({@link AttributeBag metadata},必须非空,无词料传 {@link AttributeBag#empty()})。
+ * id 由声明目录名派生(目录查重/副本命名/钉图键的唯一性同一来源,★v1.8/26 号);
+ * 标签是词料中的 {@link #TAGS} 项,经 {@link #tags()} 读取(全框架唯一标签读口;
+ * 缺省空集 = 不被任何模式按标签选中,20-D3)。
  *
- * <p>声明 = 三样纯静态值:世界目录路径 + 副本处置策略 + 词料容器
- * ({@link AttributeBag metadata})。id 由声明路径派生(目录查重/副本命名/钉图键
- * 统一到本派生);标签是词料容器中的 {@link #TAGS} 一项,经 {@link #tags()} 读取
- * (全框架唯一标签读口;缺省空集 = 不被任何模式按标签选中,20-D3 口径);结构
- * 合法性由调用方在构造期自理(响亮抛纪律在注册口:世界目录存在性/查重,
- * MapRegistry)。
+ * <p><b>路径即权威</b>:入参 {@code toAbsolutePath().normalize()} 规范化为绝对
+ * 路径,构造后不再重解析;缺目录名(id 无从派生)构造期响亮抛;世界目录
+ * 存在性/查重在注册口把关(MapRegistry)。
  *
- * <p><b>路径即权威</b>:入参路径 {@code toAbsolutePath().normalize()} 规范化为
- * 绝对路径入库(相对输入按调用方工作目录解析),构造后不再重解析;缺目录名
- * (id 无从派生)构造期响亮抛。
- *
- * <p><b>冻结由容器不可变性结构保证</b>:{@link AttributeBag} 构造后结构不可变、
- * 无公开写口(词料只在声明装配期经其 {@link AttributeBag.Builder} 写入一次);
- * 声明级单写方 = 声明构造方,构造即冻结(§2.7「状态唯一」;14.26 状态写入归属)。
- * {@code metadata} 必须非空——无词料传 {@link AttributeBag#empty()},不接受
- * {@code null}。
- *
- * <p>零 Bukkit 依赖:{@code World}/{@code Location} 换算推迟到消费点。
+ * <p>冻结由容器不可变性结构保证(§2.7;词料只在装配期经 Builder 写入一次);
+ * 零 Bukkit 依赖,World/Location 换算推迟到消费点。
  */
 public record MapDefinition(Path worldDirectoryPath, ResetStrategy resetStrategy, AttributeBag metadata) {
 

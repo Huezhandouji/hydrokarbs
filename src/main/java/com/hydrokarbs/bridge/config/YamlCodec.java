@@ -11,21 +11,13 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.MarkedYAMLException;
 
 /**
- * YAML → 不可变模型的唯一编解码点(15-适配 §15.2 解析实现要点;施工计划 2.2)。
+ * YAML → 不可变模型的唯一编解码点(§15.2)。
  *
- * <p>唯一读口:{@link #readMode}(模式/主配置文件 → 原始映射,交
- * {@link MatchModeConfigLoader})。UTF-8;解析用 SnakeYAML(Paper 自带,
- * 经 paper-api 传递依赖)。
+ * <p>唯一读口 {@link #readMode}:文件 → 原始映射(交 {@link MatchModeConfigLoader}),
+ * UTF-8,SnakeYAML。任何失败抛 {@link ConfigException},消息带文件名与行号。
  *
- * <p><b>异常统一</b>:任何失败抛 {@link ConfigException},消息带文件名与
- * 行号(取自底层解析器的定位信息;无定位信息的 IO 错误只带文件名)。
- *
- * <p><b>线程契约(§15.2)</b>:解析必须在虚拟线程上做——启动期首次装载
- * 文件量小,允许在主线程同步执行;热重载路径必须先在虚拟线程解析、
- * 回主线程原子替换目录引用。本类无共享可变状态({@link Yaml} 实例仅本地使用),
- * 可在任意线程调用。
- *
- * <p>零 Bukkit import:纯文件解析,离线可测。
+ * <p><b>线程契约(§15.2)</b>:热重载须虚拟线程解析、回主线程换引用;启动期
+ * 文件量小,主线程同步合法。本类无共享可变状态,任意线程可调;零 Bukkit import。
  */
 public final class YamlCodec {
 

@@ -11,6 +11,7 @@ import java.util.function.BiFunction;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 
+import com.hydrokarbs.engine.AttributeBag;
 import com.hydrokarbs.engine.component.ComponentDependencyException;
 import com.hydrokarbs.engine.component.MatchModeComponent;
 import com.hydrokarbs.engine.instance.MatchModeInstance;
@@ -22,15 +23,12 @@ import com.hydrokarbs.engine.session.Session;
 import com.hydrokarbs.map.MapDefinition;
 
 /**
- * 模式聚合根:模式的纯数据聚合 + 唯一有序组件描述符表(02-核心概念 §2.3)。
+ * 模式聚合根:纯数据聚合 + 唯一有序组件描述符表(02-核心概念 §2.3)。
  *
- * <p>★ 全类零行为分支:只有信息与组件声明。仅有的两个方法都是装配期职责
- * ({@link #verifyDependencies} 与 {@link #createInstance})。任何「顺手的方法」
- * 都意味着有一段行为找不到组件之家——正确的动作永远是给某个组件的装配描述符
- * 加构造数据,或新造一个组件(§2.8-决断二;★22 冻结公开方法集恰为 9 个)。
+ * <p>全类零行为分支:仅有的两个方法都是装配期职责({@link #verifyDependencies}
+ * 与 {@link #createInstance});行为归组件,不改公开方法集(§2.8-决断二;★22 冻结为 9 个)。
  *
- * <p>新增一个模式 = 用 Builder 拼一张组件表;不存在「实现 MatchMode 接口」这回事。
- * 模板可以是进程级单例:模板不变,实例万变。build 后不可追加组件(A9)。
+ * <p>新增一个模式 = 用 Builder 拼组件表;模板进程级单例,build 后不可追加组件(A9)。
  */
 public final class MatchMode {
 
@@ -39,7 +37,7 @@ public final class MatchMode {
     private final List<Component> description;
     private final Material icon;                 // 入口牌子/GUI 用;未设置时为 null(消费方自理)
     private final Set<String> mapTags;           // 支持哪些地图(按 MapDefinition.tags 匹配)
-    private final MatchModeMeta meta;            // 是否记史/人数窗(入场裁决已归组件;★v1.7 起无能力标签;★v1.13 起无缺省去向分量)
+    private final AttributeBag meta;             // 元数据 = AttributeBag 词料容器,约定键见 MatchModeMetadata,缺席 = 中性缺省;人数窗读取经 MatchModeMetadata 帮助方法(入场裁决已归组件)
 
     /** 唯一有序组件描述符表:LinkedHashMap,声明序 = 装配调用序 = 生命周期/事件派发序。 */
     private final Map<String, ComponentEntry> components;
@@ -50,20 +48,18 @@ public final class MatchMode {
         this.description = builder.description;
         this.icon = builder.icon;
         this.mapTags = builder.mapTags;
-        this.meta = builder.meta;
+        this.meta = builder.metadata;
         this.components = Collections.unmodifiableMap(new LinkedHashMap<>(builder.components));
     }
 
     // ── 仅有的两个方法(都是装配期职责) ─────────────────────────────
 
     /**
-     * 装配期依赖检查:缺必需依赖抛 {@link ComponentDependencyException}(算法逐行照 §2.6,见下)。
+     * 装配期依赖检查:缺必需依赖抛 {@link ComponentDependencyException}(算法见 §2.6)。
      * 注册前闸与切换准备阶段调用;在这里失败,旧实例毫发无损。
      *
-     * <p>算法(§2.6):A 的必需类型 R 被满足 ⟺ 存在另一组件 B(id ≠ A)使
-     * {@code R.isAssignableFrom(B.providedType())};自己不算自己的提供者(自环仍算缺依赖、硬失败);
-     * 可选依赖缺失不报错;环不检查(允许环形依赖,唤醒顺序 = 声明序,环内先后未定义——不得依赖)。
-     * 检查只看描述符声明的类型,不需要实例。
+     * <p>要点:自己不算自己的提供者;可选依赖缺失不报错;环不检查
+     * (允许,环内先后未定义,不得依赖);只看描述符类型,不需要实例。
      */
     public void verifyDependencies() {
         for (Map.Entry<String, ComponentEntry> entry : components.entrySet()) {
@@ -107,7 +103,7 @@ public final class MatchMode {
         return mapTags;
     }
 
-    public MatchModeMeta meta() {
+    public AttributeBag meta() {
         return meta;
     }
 
@@ -144,9 +140,8 @@ public final class MatchMode {
 
     /**
      * 装配条目:(工厂, 描述符类型, 提供类型, 必需依赖, 可选依赖, 地图适配检查) 的不可变快照。
-     * 不持有描述符对象的可变状态——地图适配检查以 {@code spec::checkMap} 方法引用捕获
-     * (freeze 后描述符声明面已拒改,行为稳定),切换准备阶段 A3 逐条消费
-     * (03-会话与模式切换 §3.2-A3:对全组件表逐个调用,任何非空返回 → 切换被拒)。
+     * 地图适配检查以 {@code spec::checkMap} 方法引用捕获(freeze 后声明面已拒改),
+     * 切换准备 A3 逐条消费(§3.2-A3:任何非空返回 → 切换被拒)。
      */
     public record ComponentEntry(
             MatchModeComponent.Factory<? extends MatchModeComponent> factory,
@@ -165,7 +160,7 @@ public final class MatchMode {
         private List<Component> description;
         private Material icon;
         private Set<String> mapTags = Set.of();
-        private MatchModeMeta meta;
+        private AttributeBag metadata;
         private final Map<String, ComponentEntry> components = new LinkedHashMap<>();
 
         public Builder(String id) {
@@ -197,8 +192,8 @@ public final class MatchMode {
             return this;
         }
 
-        public Builder meta(MatchModeMeta meta) {
-            this.meta = java.util.Objects.requireNonNull(meta, "meta");
+        public Builder metadata(AttributeBag metadata) {
+            this.metadata = java.util.Objects.requireNonNull(metadata, "metadata");
             return this;
         }
 
@@ -226,10 +221,10 @@ public final class MatchMode {
             return this;
         }
 
-        /** 产出不可变聚合根。兜底:displayName 缺省 = id;description 缺省 = 占位文案;meta 必须显式设置。 */
+        /** 产出不可变聚合根。兜底:displayName 缺省 = id;description 缺省 = 占位文案;元数据缺省 = {@link AttributeBag#empty()}(缺席键 = 中性缺省)。 */
         public MatchMode build() {
-            if (meta == null) {
-                throw new IllegalArgumentException("模式 " + id + " 未设置 meta(元数据无预设,必须逐字段自建)");
+            if (metadata == null) {
+                metadata = AttributeBag.empty();
             }
             if (displayName == null) {
                 displayName = Component.text(id);

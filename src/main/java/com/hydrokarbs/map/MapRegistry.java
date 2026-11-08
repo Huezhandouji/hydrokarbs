@@ -12,36 +12,18 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * 地图目录:全部已注册 {@link MapDefinition} 的查询面(施工计划 2.2;
- * 15-适配 §15.2 热重载纪律)。★单注册通道收敛(2026-10-27,经用户裁决):
- * 文件式装载通道({@code maps/*.yml} 文件式整表替换)已删除——地图只能由外部
- * 调用方经 {@link #register} 注册,声明所有权在注册的提供方(20-D1「交成品
- * 不交工厂」),注册语义只有一份(20-D6)。★v1.8(26 号修正案议题):去模板根
- * 约定——注册校验直接验声明自带 {@code worldDirectoryPath},本类不再持有任何
- * 文件系统根。
+ * 地图目录:全部已注册 {@link MapDefinition} 的查询面(§15.2 热重载纪律)。
+ * 单注册通道:地图只能经 {@link #register} 注册,声明所有权在提供方
+ * (20-D1「交成品不交工厂」/D6);校验直接验声明自带 {@code worldDirectoryPath},
+ * 本类不持任何文件系统根(★v1.8/26 号)。
  *
- * <p><b>整体引用 volatile 原子替换</b>:内部持一个不可变快照,写操作(注册/摘除)
- * 一次性换新——读方要么看到替换前的完整目录、要么看到替换后的完整目录,
- * 永远不会读到半截。持有旧快照中 {@link MapDefinition} 引用的人不受替换影响
- * (record 纯静态值,不存在可变状态被改写)。
+ * <p><b>volatile 原子替换</b>:写操作一次性换新不可变快照,读方永不读到半截;
+ * <b>目录顺序 = 注册序</b>(自动挑图取序首因此可预期,{@code api.maps()} 同序)。
  *
- * <p><b>目录顺序 = 注册序</b>:先注册者在前(自动挑图取序首的策略因此可预期);
- * {@code api.maps()} 的顺序即此序。
- *
- * <p><b>注册期校验(20-D3,响亮抛——错误当场可感,不留半注册态)</b>:
- * ① id 查重:id = 声明目录名(路径派生)——同一路径(规范化后)再注册必撞此闸,
- * 同名异父目录同样撞(副本命名/钉图键的唯一性同一来源),撞名即抛并点名先到者
- * 及其提供方——先到者保留;② 世界目录存在性:{@code worldDirectoryPath} 存在
- * 且为目录,缺失/非目录响亮抛(消息带完整绝对路径;14.39:onEnable 顺序 =
- * 落盘世界目录 → 构造 MapDefinition → registerMap)。
- *
- * <p><b>摘除(20-D4)</b>:已不在目录 = 幂等 no-op;<b>「有会话正用 → 摘除被拒」
- * 的守卫不在这里</b>——本类是纯目录,会话查询归调用方({@code MiniGameApiImpl} 经
- * {@code SessionService.all()} 查存活会话当前实例;未释放世界句柄无公开查询口,
- * 按「当前实例正用」落最小守卫,7.5 施工决策 14)。
- *
- * <p>线程契约:注册/摘除主线程(Bukkit 事件主线程派发,api javadoc 主线程调用口径)。
- * 本类只保证引用可见性(volatile),不做并发装配。
+ * <p><b>注册期校验</b>(响亮抛):① id(= 目录名)查重,撞名抛并点名先到者
+ * ——先到者保留;② 世界目录须存在且为目录(14.39:先落盘目录再 registerMap)。
+ * <b>摘除</b>:不在目录 = 幂等 no-op;「正用摘除被拒」守卫在调用方(本类是纯
+ * 目录,20-D4)。注册/摘除主线程;本类只保证引用可见性(volatile)。
  */
 public final class MapRegistry {
 
@@ -76,13 +58,10 @@ public final class MapRegistry {
     /**
      * 注册一张地图(注册期校验见类注;重复 id 响亮抛点名先到者)。主线程调用。
      *
-     * @param provider 提供方身份键(生产 = org.bukkit.plugin.Plugin;身份比较,
-     *                 按提供方兜底摘除与诊断点名用)
+     * @param provider 提供方身份键(生产 = org.bukkit.plugin.Plugin;身份比较)
      * @param map      建好的地图声明(纯静态值,20-D1「交成品不交工厂」)
-     * @return 注册的同一声明实例(目录中的正式条目)
-     * @throws IllegalStateException    id 与既有目录撞名(点名先到者;同一路径
-     *                                  再注册必撞——id 为路径派生)
-     * @throws IllegalArgumentException 世界目录不存在或不是目录(带完整绝对路径)
+     * @throws IllegalStateException    id 撞名(点名先到者)
+     * @throws IllegalArgumentException 世界目录不存在或不是目录
      */
     public MapDefinition register(Object provider, MapDefinition map) {
         Objects.requireNonNull(provider, "provider");
@@ -147,7 +126,7 @@ public final class MapRegistry {
         throw new IllegalStateException("目录内部不一致: id " + mapId + " 在 id 索引中但无注册条目");
     }
 
-    // ── 查询面(既有,零改动) ────────────────────────────────────
+    // ── 查询面 ────────────────────────────────────────────────
 
     /** 按 id 查地图;无此 id 返回 empty。 */
     public Optional<MapDefinition> byId(String mapId) {

@@ -16,19 +16,14 @@ import com.hydrokarbs.engine.session.SessionSpec;
 import com.hydrokarbs.engine.session.SwitchResult;
 
 /**
- * ★v1.3(D5)会话创建权移交宿主(21 号修正案;16 §16.2 零新增编号——
- * 被删的拓扑装配不在任何冻结面,本类为删除后的最小语义锁定):
+ * ★v1.3(D5)会话创建权移交宿主(21 号修正案)后的最小语义锁定:
  * <ol>
- *   <li><b>会话唯一创建路径 = 外部调用 {@code SessionService.create(SessionSpec)}</b>
- *       (§3.2 冻结签名;装配基座只构造服务、零会话——对应 D5 后的框架
- *       onEnable:装配完成即零会话,没有外部调用就没有会话);</li>
- *   <li><b>零会话状态下节拍器空转</b>:「零会话起服」为合法状态——all() 空 +
- *       tickAll 多拍空转,不炸、零日志输出;</li>
- *   <li><b>switchMode 对不存在会话的拒绝路径</b>:查无会话即短路拒绝
- *       (REJECTED_BY_TARGET_MODE + 「会话不存在」),不触碰模式注册面
- *       (本用例零模式注册,拒绝与模式在册状态无关)。</li>
+ *   <li>会话唯一创建路径 = 外部调用 {@code SessionService.create(SessionSpec)}(§3.2);
+ *       装配基座只构造服务、零会话;</li>
+ *   <li>零会话状态下节拍器空转合法:all() 空 + tickAll 多拍,不炸、零日志;</li>
+ *   <li>switchMode 对不存在会话查无即短路拒绝,不触碰模式注册面。</li>
  * </ol>
- * 文案中文;零 Bukkit import(testkit 离线装配路径,同 SwitchHarness 基座)。
+ * 零 Bukkit import(testkit 离线装配,同 SwitchHarness 基座)。
  */
 @Timeout(30)
 class SessionCreationHandoverTest {

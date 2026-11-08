@@ -16,10 +16,11 @@ import java.util.stream.Collectors;
 
 import org.bukkit.World;
 
+import com.hydrokarbs.engine.AttributeBag;
 import com.hydrokarbs.engine.EngineTicker;
 import com.hydrokarbs.engine.event.SessionEvent;
 import com.hydrokarbs.engine.mode.MatchMode;
-import com.hydrokarbs.engine.mode.MatchModeMeta;
+import com.hydrokarbs.engine.mode.MatchModeMetadata;
 import com.hydrokarbs.engine.mode.MatchModeProvider;
 import com.hydrokarbs.engine.mode.MatchModeRegistry;
 import com.hydrokarbs.engine.port.EngineServices;
@@ -83,12 +84,9 @@ final class SwitchHarness {
     }
 
     /**
-     * ★v1.9(27 号)sticky 装配口(清场断言组专用):同 (map, session) 幂等同句柄假件
-     * (镜像真端口表命中)——离线「同图重开 from == to」判据依赖它。传入的 seam 既是
-     * 假件 release/discardSession 的时序录,也是本 harness 清场记录 lambda 的落点;
-     * 测试可先用 seam 建探针模式(如 {@code ProbeComponent.Spec(log).onStart(p -> seam.add("probe:start"))})
-     * 再装配,一份列表承载「清场 → 组件钩子 → release/discardSession」全序。
-     * 主线程直跑(mainExecutor = Runnable::run)下列表顺序即真实调用序。
+     * ★v1.9 sticky 装配口(清场断言组专用):同 (map, session) 幂等同句柄假件;
+     * seam 一份列表承载「清场 → 组件钩子 → release/discardSession」全序
+     * (主线程直跑,顺序即真实调用序)。
      */
     SwitchHarness(List<String> seam, String fallbackModeId, MatchMode... modes) {
         this(FakeWorldPort.sticky(seam), fallbackModeId, null,
@@ -236,7 +234,7 @@ final class SwitchHarness {
                           LinkedHashMap<String, com.hydrokarbs.engine.component.MatchModeComponent.Specification<?>> specs) {
         MatchMode.Builder builder = new MatchMode.Builder(id)
                 .mapTags(TAG)
-                .meta(new MatchModeMeta(false, min, max));
+                .metadata(MatchModeMetadata.addTo(new AttributeBag.Builder(), false, min, max).build());
         specs.forEach(builder::addComponent);
         return builder.build();
     }

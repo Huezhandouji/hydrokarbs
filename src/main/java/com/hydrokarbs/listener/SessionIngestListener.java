@@ -16,19 +16,15 @@ import com.hydrokarbs.engine.session.Session;
 import com.hydrokarbs.engine.session.SessionService;
 
 /**
- * 会话入口监听:进服/退服/被踢/重生四事件路由到会话服务
- * (15-PaperMC 适配 §15.1 优先级表 SessionIngestListener 行:NORMAL、ignoreCancelled=false)。
- *
- * <p><b>只路由不做重活</b>(§15.1 规范表:回调内「路由到会话 → 发内部事件 → 返回」):
+ * 会话入口监听:进服/退服/被踢/重生四事件路由到会话服务(§15.1:NORMAL、
+ * ignoreCancelled=false;回调内只路由不做重活):
  * <ul>
- *   <li>进服:已在某会话名册的断线成员 → 宽限销账 + 置回在线 + 发重连事件;
- *       未入会话的新玩家 → 恰有唯一存活会话(rotation 单会话形态)时自动收录,
- *       多会话(arena)不自动路由——入口牌子/NPC 等定向入口归外部插件(设计未细化,
- *       最小自洽:单会话收录、多会话忽略并记日志);</li>
- *   <li>退服:断线宽限标记(成员保留在册,宽限语义见会话服务);</li>
- *   <li>被踢:立即移除(宽限仅服务连接意外中断);</li>
- *   <li>重生:定位所属会话与当前实例——重生安置是组件层职责(阶段4 重生组件),
- *       本阶段路由到「查无则已」即返回,不抢占组件层的安置点。</li>
+ *   <li>进服:断线成员宽限销账 + 置回在线 + 发重连事件;未入会话的新玩家仅
+ *       唯一存活会话(rotation)时自动收录,多会话(arena)不自动路由——
+ *       定向入口(牌子/NPC)归外部插件;</li>
+ *   <li>退服:断线宽限标记(宽限语义见会话服务);被踢:立即移除(宽限仅
+ *       服务连接意外中断);</li>
+ *   <li>重生:定位所属会话与当前实例即返回——安置是组件层职责,不抢占。</li>
  * </ul>
  */
 public final class SessionIngestListener implements Listener {
@@ -78,8 +74,7 @@ public final class SessionIngestListener implements Listener {
         if (owning.isEmpty()) {
             return;
         }
-        // 定位到所属会话的当前实例即返回——重生安置(出生点选择/观战位等)
-        // 是实例组件层(阶段4 重生组件)的接手点,会话入口不抢占。
+        // 定位到所属会话的当前实例即返回——重生安置归组件层,会话入口不抢占
         owning.get().currentInstance();
     }
 }

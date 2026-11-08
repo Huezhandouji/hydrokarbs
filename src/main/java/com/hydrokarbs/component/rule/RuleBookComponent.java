@@ -14,14 +14,10 @@ import com.hydrokarbs.map.MapDefinition;
 
 /**
  * 声明式规则簿组件:持有规则列表,事件到达时按声明序求值
- * (施工计划 1.5;06-共享组件 §6.1-#6)。
+ * (06-共享组件 §6.1-#6);可选件,不要规则簿的模式不挂。
  *
- * <p>求值链:trigger(事件)→ when(上下文)→ then(上下文);可选件,
- * 不要规则簿的模式不挂。逐条 try/catch 隔离——总线隔离的是订阅者,
- * 规则簿把隔离再下探一层:一个坏规则不会毁掉整局(WARN 后继续下一条)。
- *
- * <p>类注:实例只读视图的来源同阶段状态机组件的类注;{@code session()} 已随
- * 2.6 接通真只读视图(阶段1 已知问题 4 消除,记 deviations)。
+ * <p>求值链:trigger(事件)→ when(上下文)→ then(上下文)。逐条 try/catch
+ * 隔离——把总线隔离下探一层:一个坏规则不会毁掉整局(WARN 后继续下一条)。
  */
 public final class RuleBookComponent extends MatchModeComponent {
 
@@ -70,8 +66,8 @@ public final class RuleBookComponent extends MatchModeComponent {
                     rule.then().accept(ctx);
                 }
             } catch (Throwable t) {
-                LOG.log(Level.WARNING, "规则求值异常(已隔离,继续下一条): 规则 " + rule.id()
-                        + ",事件类型 " + event.getClass().getName(), t);
+                LOG.log(Level.WARNING, "Rule evaluation threw (isolated, continuing): rule " + rule.id()
+                        + ", event " + event.getClass().getName(), t);
             }
         }
     }
@@ -112,7 +108,7 @@ public final class RuleBookComponent extends MatchModeComponent {
 
         @Override
         public SessionView session() {
-            return svc().self().session();   // 2.6 接通:经服务集自面取所属会话的只读视图
+            return svc().self().session();   // 经服务集自面取所属会话的只读视图
         }
     }
 }

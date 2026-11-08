@@ -44,18 +44,11 @@ import com.hydrokarbs.testkit.ProbeComponent;
 import com.hydrokarbs.testkit.TestComponent;
 
 /**
- * ★14「切换原子性」首建(16-路线图与验收 §16.2;2.3 测试表):
- * ①阶段 A 任一步失败(未知 id/地图适配/人数窗/依赖异常/世界失败)→
- * 旧实例继续运行、future 完成拒绝;②造件/唤醒/生效三抛点 → 都落到回退模式且成员
- * 仍有实例;③生效抛的路径先全停再回退;④任何路径结束后当前实例非空或会话已解散,
- * 绝无中间态残留。附:★6 close 幂等与 ★7 清场逆序在切换路径(B2)重放。
- * ★v1.7:原 A2 能力校验失败路径(capability 缺失拒绝)随能力标签机制全链退场删除
- * (25 号修正案);阶段 A 失败路径覆盖自此为 A1/A3/A4/A5/A6。
- * ★v1.9(27 号修正案):新增清场断言族(★65)——切换接缝 B3.5(同世界复用先行)/
- * B5 finally(异图殿后、先于 release)与解散接缝(finally 内先名册后世界、先于
- * discardSession)的世界清场;离线断言以 FakeWorldPort.sticky(同句柄幂等)+ seamLog
- * 时序录为前提,World#getPlayers 枚举与 teleport 的平台正确性归 runServer 实测(同
- * ★17「真服抽查并入 2.5 闭环」分工)。
+ * ★14「切换原子性」首建(§16.2):①阶段 A 任一步失败 → 旧实例继续运行、future 拒绝;
+ * ②造件/唤醒/生效三抛点 → 都落到回退模式且成员仍有实例;③生效抛先全停再回退;
+ * ④任何路径结束后当前实例非空或会话已解散,绝无中间态残留。附 ★6/★7 在 B2 重放。
+ * ★v1.9(27 号):新增清场断言族(★65)——B3.5/B5 与解散接缝的世界清场时序;
+ * 离线以 FakeWorldPort.sticky + seamLog 时序录为前提,平台正确性归 runServer 实测。
  */
 @Timeout(30)
 class ModeSwitchAtomicityTest {
@@ -403,7 +396,7 @@ class ModeSwitchAtomicityTest {
         assertTrue(events.stream().noneMatch(e -> e instanceof SessionEvent.SessionDissolved),
                 "无解散事件(fallback 有效时不得解散)");
         assertFalse(harness.logLines.stream().anyMatch(line ->
-                        line.startsWith("SEVERE") && line.contains("回退切换被拒")),
+                        line.startsWith("SEVERE") && line.contains("fallback switch rejected")),
                 "无误报的「回退切换被拒」SEVERE(detail 曾为『切换进行中,重入被拒』): " + harness.logLines);
     }
 
@@ -545,7 +538,7 @@ class ModeSwitchAtomicityTest {
         assertEquals("fb", fx.session.currentInstance().orElseThrow().modeId(), "落位不受清场失败影响");
         assertEquals(releasesBefore + 1, fx.harness.worlds.releaseCount, "清场抛异常 release 照发");
         assertTrue(fx.harness.logLines.stream().anyMatch(line ->
-                        line.startsWith("WARNING") && line.contains("切换世界清场失败")),
+                        line.startsWith("WARNING") && line.contains("World clear on switch failed")),
                 "清场失败记 WARN(best-effort,沿用三级兜底语气)");
     }
 

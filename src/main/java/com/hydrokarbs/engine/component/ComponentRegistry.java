@@ -16,20 +16,14 @@ import com.hydrokarbs.engine.mode.MatchMode;
 import com.hydrokarbs.engine.port.ComponentLookupPort;
 
 /**
- * 实例组件注册表:声明序集合 + 每组件资源表(施工计划 1.3;02-核心概念 §2.5)。
+ * 实例组件注册表:声明序集合 + 每组件资源表(§2.5)。
  *
- * <p>声明记录来自模式聚合根的 {@link MatchMode.ComponentEntry}(不是手工维护的表,
- * 因此不会漂移);容器在装配期逐条 {@link #register}。
- *
- * <ul>
- *   <li>遍历一律走不可变快照(声明序/逆序/{@link #forEachTicking})——
- *       遍历期间组件再订阅/退订都不破坏本轮(写时复制口径);</li>
- *   <li>资源表按组件实例索引(订阅注销/延时任务取消/显示移除的句柄统一挂这里),
- *       {@link #reclaimRegisteredResources()} 幂等统一回收——组件 stop 返回后
- *       框架自动做,组件自己不注销(§2.4 stop javadoc);</li>
- *   <li>查找口({@link #get}/{@link #getAll}/{@link #byId})实现
- *       {@link ComponentLookupPort},即 svc 服务集的 components 成员。</li>
- * </ul>
+ * <p>声明记录来自模式聚合根的 {@link MatchMode.ComponentEntry},装配期逐条
+ * {@link #register}。遍历一律走不可变快照——遍历期间组件再订阅/退订不破坏本轮;
+ * 资源表按组件实例索引(句柄统一挂这里),由 {@link #reclaimRegisteredResources()}
+ * 幂等统一回收——组件 stop 返回后框架自动做,组件不自己注销;
+ * 查找口({@link #get}/{@link #getAll}/{@link #byId})实现
+ * {@link ComponentLookupPort},即 svc 服务集的 components 成员。
  */
 public final class ComponentRegistry implements ComponentLookupPort {
 
@@ -135,7 +129,7 @@ public final class ComponentRegistry implements ComponentLookupPort {
             try {
                 handle.close();
             } catch (Throwable t) {
-                LOG.log(Level.WARNING, "登记资源回收失败(忽略并继续)", t);
+                LOG.log(Level.WARNING, "Registered resource reclaim failed (ignored)", t);
             }
         }
     }

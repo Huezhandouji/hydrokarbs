@@ -12,23 +12,18 @@ import com.hydrokarbs.engine.service.ServiceLifecycle;
 import com.hydrokarbs.engine.session.SessionId;
 
 /**
- * 参照服务二:<b>拉取式</b>——零权威状态的全局看板
- * (18 号修正案 §3 参照服务骨架;选型①「只读快照 + 事件,零侵入」)。
+ * 参照服务二:<b>拉取式</b>——零权威状态的全局看板(18 号 §3,选型①「只读
+ * 快照 + 事件,零侵入」)。只维护生命周期事件驱动的最小值记号(会话 id →
+ * 当前模式 id 字符串),全部值拷贝,<b>永不持有活实例/活组件引用</b>(14.31);
+ * 查询口一律现取——每次返回新拷贝,内部视图不外露。
  *
- * <p>「零状态」指零业务权威状态(与上报式的总账对仗):本类只维护
- * 生命周期事件驱动的最小值记号(会话 id → 当前模式 id 字符串),全部是值拷贝,
- * <b>永不持有活实例/活组件引用</b>(14.31);查询口一律现取——每次调用返回
- * 新拷贝,内部视图不外露。深展示数据(成员/进度等)在阶段 2 的只读实例面就绪后
- * 改为现取快照(D5 通道②),本阶段视图仅由通道①(订阅)驱动:
- * {@code SessionCreated} 登记、{@code SessionDissolved} 除名、
- * {@code ModeSwitchCompleted} 更新当前模式。
+ * <p>视图仅由订阅驱动:{@code SessionCreated} 登记、{@code SessionDissolved}
+ * 除名、{@code ModeSwitchCompleted} 更新当前模式(深展示数据待只读实例面就绪
+ * 后改现取快照,D5 通道②)。订阅回调经注销哨兵包裹:{@link #stop()} 之后
+ * 总线里的迟到回调不再写入。
  *
- * <p>订阅回调经注销哨兵包裹:{@link #stop()} 之后总线里的迟到回调不再写入
- * (D5 通道①「订阅句柄在 stop 注销」——总线逐条注销面归 2.6,本阶段以哨兵
- * 实现同等语义,登记于施工偏差)。
- *
- * <p>依赖经构造器注入(镜像 L0 工厂闭包捕获口径);服务间依赖只能经
- * {@code ServiceSpec#requires} 声明、由注册表注入,禁止互 new(14.34)。
+ * <p>依赖经构造器注入;服务间依赖只能经 {@code ServiceSpec#requires} 声明、
+ * 由注册表注入,禁止互 new(14.34)。
  */
 public final class GlobalBoard implements ServiceLifecycle {
 

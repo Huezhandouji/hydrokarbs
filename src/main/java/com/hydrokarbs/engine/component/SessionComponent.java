@@ -10,43 +10,17 @@ import com.hydrokarbs.engine.event.SessionEvent;
 import com.hydrokarbs.engine.port.SessionServices;
 
 /**
- * 会话级组件基类(★v4;02-核心概念 §2.5.1;03-会话与模式切换 §3.8;施工计划 2.6)。
+ * 会话级组件基类(★v4;§2.5.1;§3.8):<b>每会话一份</b>、跨模式切换存活、随 dissolve 全灭;
+ * 由会话装配声明({@code SessionSpec}),模式无权注册/增删(D4)。纪律照抄
+ * {@link MatchModeComponent}(§2.4):只许 svc 字段 + 钩子 + Specification、基类不认识子类、
+ * svc 构造期注入四条件(注入先于钩子/final 只注一次/未注入即抛/构造点唯一)。
  *
- * <p>挂载级从「随实例」换为「随会话」:生命周期随 {@code Session}({@code create} →
- * {@code dissolve}),<b>每会话一份</b>、跨模式切换存活、随 dissolve 全灭;由会话装配
- * 声明({@code SessionSpec} 的有序组件表,模式无权注册/增删,D4)。
- * 纪律逐条照抄 {@link MatchModeComponent}(§2.4):
- * <ul>
- *   <li>只允许出现 svc 字段 + 钩子方法 + Specification——「顺手加个 helper」属越界;</li>
- *   <li>svc 构造期注入四条件:①注入先于一切钩子 ②{@code final} 只注一次
- *       ③{@link #svc()} 未注入即抛 ④组件构造点唯一(注册表内单一创建路径,
- *       id 与服务集成对产生);</li>
- *   <li><b>基类不认识子类</b>:要协作就经 {@code svc().components()} 取强类型读口。</li>
- * </ul>
- *
- * <p><b>派发</b>:按<b>声明序</b>广播、{@code stop} <b>逆序</b>;{@code stop} 由框架
- * <b>无条件</b>调用(无单例豁免条款——这正是「组件」与「内核机制」的分界,§2.8-决断一)。
- * {@code update} 每 tick 派发,<b>与「当前是否有实例」无关</b>(切换间隙照常,§3.8)。
- *
- * <p><b>故障隔离</b>(D9,会话级隔离):{@code update}/{@code onEvent} 抛异常 →
- * 记日志(会话 id / 组件 id / 原因)→ 对该组件 {@code safeStop} + 打标隔离
- * (此后跳过其派发)→ 发 {@code SessionComponentQuarantined} 会话事件 →
- * <b>会话不解散</b>,其余组件照常。与实例级的差异:实例级隔离 → {@code end()} →
- * 回退模式(模式坏了有兜底);会话级没有回退目标、解散代价过大——停用单个策略组件
- * 是可接受的降级。<b>装配期</b> {@code awake}/{@code start} 抛 → 会话创建失败
- * (响亮,L0 SEVERE;arena 则该竞技场不启动)——两种失败语义不可混淆。
- *
- * <p><b>跨级只读</b>(D5,§2.8-决断四):实例组件经 {@code svc().self().session()} →
- * {@code SessionView#component} 查会话组件;本基类一侧经
- * {@code svc().self().currentInstance()} → {@code MatchModeInstanceAccess#component}
- * 查实例组件——<b>现取不缓存</b>,无实例或切换间隙返回 {@code empty},不得缓存实例
- * 组件引用越过切换(14.27)。跨级干预只走端口
- * ({@code requestSwitch}/{@code requestDissolve})。
- *
- * <p>★ 待裁决登记(④,D2 落盘注):钩子表 {@code start()} 行的「订阅实例事件」
- * 在本版契约骨架<b>无接口落点</b>——会话侧订阅面只有 {@code SessionPort#events()}
- * (仅覆盖会话事件);本版按骨架现状落盘(无实例事件订阅面),「删该半句或补订阅面」
- * 提请上游裁决,未静默决定(同登记见 ADR-0004 D2 落盘注与 03 §3.8)。
+ * <p><b>派发</b>:声明序广播、{@code stop} 逆序且由框架<b>无条件</b>调用(无单例豁免,
+ * §2.8-决断一);{@code update} 每 tick 必调,与实例有无无关(§3.8)。<b>故障隔离</b>(D9):
+ * update/onEvent 抛 → 隔离该组件(<b>会话不解散</b>);装配期 awake/start 抛 → 会话创建失败
+ * ——两种失败语义不可混淆。<b>跨级只读</b>(D5):<b>现取不缓存</b>,不得缓存实例组件引用
+ * 越过切换(14.27);跨级干预只走端口(requestSwitch/requestDissolve)。
+ * ★ 待裁决(D2 落盘注,ADR-0004):「订阅实例事件」在本版契约骨架无接口落点,已提请上游裁决。
  */
 public abstract class SessionComponent {
 
@@ -103,17 +77,12 @@ public abstract class SessionComponent {
     public void stop() {
     }
 
-    // ── 装配期描述符(照抄 MatchModeComponent.Specification;★v1.7 起 capabilities 随标签机制退场) ──
+    // ── 装配期描述符(照抄 MatchModeComponent.Specification) ──
 
     /**
-     * 会话级装配描述符:声明「这个组件怎么造」——工厂、依赖类型、供给面
-     * (§2.5.1;03 §3.8)。
-     *
-     * <p>{@link #freeze()} 产出不可变 {@link Snapshot},此后声明方法拒改——
-     * 同一描述符实例(SPEC 常量)被多个会话共享互不串改(结构保证,不靠共享者自觉)。
-     * 组件 id 不在描述符上:由会话装配方({@code SessionService.create})在 bind 时
-     * 显式携带({@code SessionComponentRegistry.bind(id, snapshot)}),跨会话共享同一
-     * SPEC 常量各自绑入互不影响。
+     * 会话级装配描述符:声明「这个组件怎么造」——工厂、依赖类型、供给面(§2.5.1;§3.8)。
+     * {@link #freeze()} 产出不可变 {@link Snapshot},此后声明方法拒改——同一 SPEC 常量
+     * 跨会话共享互不串改(结构保证)。组件 id 不在描述符上:由会话装配方在 bind 时显式携带。
      */
     public abstract static class Specification<T extends SessionComponent> {
 

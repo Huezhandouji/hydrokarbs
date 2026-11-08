@@ -5,11 +5,9 @@ import java.util.Objects;
 import com.hydrokarbs.engine.session.SessionId;
 
 /**
- * 入场裁决上下文(03-会话与模式切换 §3.2.1):触发点 + 所属会话。
+ * 入场裁决上下文(§3.2.1):触发点 + 所属会话。
  *
- * <p>设计案原文为 {@code record JoinContext(Trigger trigger, …)}——会话只读视图的
- * 完整面留待会话组件层(2.6)扩充;本阶段落最小两字段(触发点 + 会话 id),
- * 新字段按消费方只增不改。
+ * <p>本面为最小两字段(触发点 + 会话 id);新字段按消费方只增不改。
  */
 public record JoinContext(Trigger trigger, SessionId session) {
 

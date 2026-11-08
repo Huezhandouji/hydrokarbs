@@ -1,11 +1,9 @@
 package com.hydrokarbs.engine.session;
 
 /**
- * 入场结果(03-会话与模式切换 §3.2.1 原样;与 {@link SwitchResult} 同住会话层,
- * 一种结果格式贯穿):拒绝原因走 reason/detail,不是可编程契约。
- *
- * <p>{@code REJECT} 裁决下会话不收(名册不登记);{@code ADMIT}
- * 登记名册并成为参赛者;观战安置非引擎词汇,归组件层。
+ * 入场结果(03-会话与模式切换 §3.2.1;与 {@link SwitchResult} 同一种结果格式):
+ * 拒绝原因走 reason/detail,不是可编程契约。REJECT 下会话不收(名册不登记),
+ * ADMIT 登记名册并成为参赛者;观战安置归组件层。
  */
 public sealed interface JoinResult {
 

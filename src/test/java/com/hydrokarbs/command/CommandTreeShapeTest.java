@@ -22,20 +22,13 @@ import com.hydrokarbs.testkit.StubSessionService;
 import org.junit.jupiter.api.Test;
 
 /**
- * 命令树离线树形断言(★9:零 Bukkit import,构树/遍历 = 纯 Brigadier,不触 Bukkit 静态;
- * {@code CommandSourceStack} 仅作泛型参数,不实例化)。
- *
- * <p>{@code HydrokarbsCommand.buildRoot} 的包内可见性是 MatchCommand 时代
- * 「供离线断言树形用」注释的首个兑现消费者(此前 src/test 全树零消费)——
- * 非沿用既有惯例。
+ * 命令树离线树形断言(★9:零 Bukkit import,纯 Brigadier 构树/遍历)。
  *
  * <p>断言面:根名 hydrokarbs/根下恰为 {session}/session 下恰为 {status, end}/
  * 两处 {@code <id>} 参数类型 == {@code greedyString()}(防回退 word()——SessionId
  * 值域含 {@code [0-9A-Za-z_.+-]} 外字符,word() 截断解析 → session(id) 永远 miss;
- * StringArgumentType 未覆写 equals,按 {@code StringType.GREEDY_PHRASE} 枚举判)/
- * requires 门非空/公开权限常量字符串冻结;另断言全树无 switch 节点——对装配入参
- * 恒真,定位为删除标记而非强回归闸(switch 子命令与 hydrokarbs.command.switch
- * 权限节点已随 MatchCommand 退场)。
+ * 按 {@code StringType.GREEDY_PHRASE} 枚举判)/requires 门非空/公开权限常量冻结;
+ * 另断言全树无 switch 节点(switch 子命令已随 MatchCommand 退场的删除标记)。
  */
 class CommandTreeShapeTest {
 

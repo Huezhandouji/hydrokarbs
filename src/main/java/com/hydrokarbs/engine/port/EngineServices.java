@@ -5,9 +5,8 @@ import java.util.Objects;
 /**
  * 引擎服务集:{@code MatchMode#createInstance} 的末位形参(02-核心概念 §2.3)。
  *
- * <p>设计案未展开成员;本阶段按最小装配需要定义(仅平台端口——
- * 实例侧延迟任务等调度口经它注入),<b>已列「待裁决」</b>(阶段 README §4):
- * 成员按消费方(1.3 容器/阶段 2 会话)扩充、只增不改,扩充须过设计审查。
+ * <p>按最小装配需要定义(仅平台端口——实例侧延迟任务等调度口经它注入);
+ * 成员按消费方(容器/会话)扩充、只增不改,扩充须过设计审查。
  */
 public record EngineServices(PlatformPort platform) {
 

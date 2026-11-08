@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import com.hydrokarbs.engine.AttributeBag;
 import com.hydrokarbs.engine.component.MatchModeComponent;
 import com.hydrokarbs.engine.mode.MatchMode;
-import com.hydrokarbs.engine.mode.MatchModeMeta;
+import com.hydrokarbs.engine.mode.MatchModeMetadata;
 import com.hydrokarbs.engine.port.EngineServices;
 import com.hydrokarbs.engine.port.MatchModeInstanceServices;
 import com.hydrokarbs.engine.port.PlatformPort;
@@ -155,7 +155,7 @@ class CleanupResilienceTest {
         List<String> log = new ArrayList<>();
         RuntimeException stopFailure = new RuntimeException("stop-boom");
         MatchMode.Builder builder = new MatchMode.Builder("m1")
-                .meta(new MatchModeMeta(false, 0, 100));
+                .metadata(MatchModeMetadata.addTo(new AttributeBag.Builder(), false, 0, 100).build());
         builder.addComponent("c1", new ProbeSpec(log, null));
         builder.addComponent("c2", new ProbeSpec(log, () -> {
             throw stopFailure;

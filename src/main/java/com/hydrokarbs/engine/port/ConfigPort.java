@@ -6,9 +6,9 @@ import com.hydrokarbs.engine.session.MatchModeConfig;
 import com.hydrokarbs.map.MapDefinition;
 
 /**
- * 配置端口:模式配置与地图声明的统一取物口(最小落点,施工计划 1.2)。
+ * 配置端口:模式配置与地图声明的统一取物口(最小落点)。
  *
- * <p>成员按消费方(阶段 2 会话装配/切换准备)扩充、只增不改;
+ * <p>成员按消费方(会话装配/切换准备)扩充、只增不改;
  * 扩充须过设计审查(与 svc 三成员同一纪律)。实现体归 L1 适配层。
  */
 public interface ConfigPort {

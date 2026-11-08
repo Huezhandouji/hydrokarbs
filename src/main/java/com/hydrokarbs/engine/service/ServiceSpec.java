@@ -7,26 +7,13 @@ import java.util.Set;
 import java.util.function.Function;
 
 /**
- * 进程级服务的声明式描述符(18 号修正案 D3/§3;施工计划 1.6)。
+ * 进程级服务的声明式描述符(18 号修正案 D3/§3):一个 id、一个主类型、一个工厂、
+ * 一组依赖声明;由 L0 现场构建、只被一个注册表消费(D4 单类型单服务,需要两个
+ * 接口面就做门面接口)。与组件 Spec 的刻意差异(D3):无 freeze();工厂收
+ * {@link ServiceEnv} 而非 svc 服务集,依赖创建期注入(拓扑序保证就绪)。
  *
- * <p>由 L0 装配现场构建、交付给唯一的 {@link ServiceRegistry} 消费——
- * 「一个 id、一个主类型、一个工厂、一组依赖声明」(D4 单类型单服务:
- * 需要两个接口面就做一个门面接口,不做 multi-provide)。
- *
- * <p><b>与组件 {@code Specification} 的两处刻意差异(D3,理由照决策记录):</b>
- * <ol>
- *   <li><b>无 {@code freeze()}</b>——组件 Spec 需要冻结是因常量 Spec 跨模式共享
- *       (共享策略常量的先例),服务 Spec 由 L0 现场构建、只被一个注册表消费,
- *       无共享串改问题,不加仪式(YAGNI);</li>
- *   <li><b>工厂收 {@link ServiceEnv} 而非 svc 服务集</b>——服务不持服务集记录,
- *       依赖在创建期经 {@code env.dep(Class)} 注入(拓扑序保证就绪),
- *       {@code depOpt} 表达可选依赖(缺席 empty,不抛)。</li>
- * </ol>
- *
- * <p>语义口径:{@code requires} 声明的类型缺席 → seal 抛 {@link ServiceDependencyException}
+ * <p>语义口径:{@code requires} 缺席 → seal 抛 {@link ServiceDependencyException}
  * 点名双方;{@code requiresOptional} 缺席 → 不报错,运行期 {@code depOpt} 自查。
- * ★v1.7(25 号修正案):原 {@code capabilities} 标签声明随能力标签机制全链退场删除
- * (08-角色桥接 §8.8 扩注的「服务(seal 期)注册者」通道随之消失)。</p>
  */
 public final class ServiceSpec<S> {
 

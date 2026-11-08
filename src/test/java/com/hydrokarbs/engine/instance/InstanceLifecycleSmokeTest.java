@@ -20,7 +20,7 @@ import com.hydrokarbs.engine.AttributeBag;
 import com.hydrokarbs.engine.component.MatchModeComponent;
 import com.hydrokarbs.engine.event.MatchModeInstanceEvent;
 import com.hydrokarbs.engine.mode.MatchMode;
-import com.hydrokarbs.engine.mode.MatchModeMeta;
+import com.hydrokarbs.engine.mode.MatchModeMetadata;
 import com.hydrokarbs.engine.port.EngineServices;
 import com.hydrokarbs.engine.port.MatchModeInstanceServices;
 import com.hydrokarbs.engine.port.PlatformPort;
@@ -158,7 +158,7 @@ class InstanceLifecycleSmokeTest {
 
     private static MatchMode mode(String id, MatchModeComponent.Specification<?>... specs) {
         MatchMode.Builder builder = new MatchMode.Builder(id)
-                .meta(new MatchModeMeta(false, 0, 100));
+                .metadata(MatchModeMetadata.addTo(new AttributeBag.Builder(), false, 0, 100).build());
         int index = 1;
         for (MatchModeComponent.Specification<?> spec : specs) {
             builder.addComponent("c" + index++, spec);

@@ -6,29 +6,20 @@ import java.util.Set;
 import org.bukkit.Material;
 
 /**
- * 模式快照:api 侧不可变 record(07-公共API §7.1/§7.2 值对象行;7.1 施工文档步骤 3)。
+ * 模式快照:api 侧不可变 record(07 §7.1/§7.2 值对象行;数据源 =
+ * {@code MatchMode}/模式元数据词料(AttributeBag,经 MatchModeMetadata 约定键),§2.3/§2.5)。
  *
- * <p>字段映射(数据源 = {@code MatchMode}/{@code MatchModeMeta},§2.3/§2.5):
- * <ul>
- *   <li>{@code displayName}/{@code description}:Adventure {@code Component} →
- *       MiniMessage <b>序列化串</b>(消费者可再解析;§14.10 纪律随消费方——玩家可控串
- *       不得直接喂 MiniMessage,序列化发生在框架侧对模式声明文案的转换点);</li>
- *   <li>{@code icon}:Bukkit {@link Material} 原样;未声明时为 {@code null}
- *       ({@code MatchMode#icon()} 既有口径:消费方自理)。</li>
- * </ul>
+ * <p>{@code displayName}/{@code description} 为 MiniMessage <b>序列化串</b>
+ * (消费方可再解析;玩家可控串不得直接喂 MiniMessage——§14.10 纪律随消费方);
+ * {@code icon} 为 Bukkit {@link Material} 原样,未声明为 {@code null}(消费方自理)。
  *
- * <p><b>★v1.13(31 号修正案)收缩注</b>:原第九分量 {@code defaultTransition}
- * 随缺省去向管线退场删除(无显式去向的结束一律回落 {@code session.fallback-mode},
- * 引擎侧枚举 {@code MatchModeMeta.DefaultTransition} 同步删除)——消费过该分量的
- * 旧编译物需按 API_VERSION 8 重编译(经用户裁决不设双轨过渡期)。
+ * <p>★v1.13 收缩:原 {@code defaultTransition} 分量已删(31 号修正案)——消费过
+ * 该分量的旧编译物需按 v1.13 面重编译(不设双轨过渡期;API 版本协商面已于
+ * ★v1.14/32 号退场,兼容性以版本链陈述为准)。
  *
- * <p><b>第三方可见性(7.2)</b>:第三方插件经 {@code MatchModeProvider} 注册
- * (ServicesManager 收录,§7.2/§13.4)入目录后,服主经 {@code MiniGameApi#modes()}
- * 即见本快照——与其他模式同列、无特判(14.21);id 词汇由提供方定义,
- * 引擎零具体模式词汇。
- *
- * <p>快照纪律:集合构造期 {@code copyOf};不含组件描述符表(那是引擎装配面,
- * A9 三限制:build 后不可变,07 §7.2)。
+ * <p>第三方模式经 {@code registerMode} 注册入目录,与其他模式同列、无特判(14.21);
+ * id 词汇由提供方定义,引擎零具体模式词汇。快照纪律:集合构造期 {@code copyOf};
+ * 不含组件描述符表(A9:build 后不可变)。
  */
 public record MatchModeInfo(String id, String displayName, List<String> description,
                             Material icon, Set<String> mapTags, boolean recordsHistory,

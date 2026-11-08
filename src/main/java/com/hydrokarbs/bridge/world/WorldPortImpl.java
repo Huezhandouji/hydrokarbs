@@ -29,33 +29,17 @@ import com.hydrokarbs.engine.session.SessionId;
 import com.hydrokarbs.map.MapDefinition;
 
 /**
- * 世界端口实现:模板复制/引用计数/副本处置(03-会话与模式切换 §3.7;施工计划 2.4 步骤 5;
- * 12-代码骨架 §12.1 {@code bridge/world/} 落位)。
+ * 世界端口实现:模板复制/引用计数/副本处置(§3.7)。
  *
- * <p><b>规则表逐行落点</b>:调用方只有会话内核(获取在切换准备阶段、释放在切换完成/解散);
- * 同一 (map, session) 重复获取幂等返回同句柄并累加计数,并发获取合并到同一次复制;
- * 归零按句柄的 {@link ResetStrategy} 处置副本;复制源恒为声明的世界目录
- * (★v1.8 去模板根:声明按路径直交),
- * {@code REUSE_DIRTY} 的复用只发生在同会话(副本目录名含会话短码,天然不跨会话)。
+ * <p>调用方只有会话内核;同一 (map, session) 重复获取幂等返回同句柄并累加计数,
+ * 并发获取合并到同一次复制;归零按 {@link ResetStrategy} 处置副本。复制源恒为
+ * 声明的世界目录;REUSE_DIRTY 复用仅限同会话(目录名含会话短码,窗口 = 会话
+ * 生命周期)。整体 {@code orTimeout}(§3.5 防护④):超时即失败不降级,迟到
+ * 复制在加载点回滚,不产生无人持有的副本。
  *
- * <p><b>两段线程纪律</b>(§3.7 接口注释 + §16.4 三律②):复制/删目录 = 注入的 IO 执行器
- * (生产 = 虚拟线程);{@code createWorld}/{@code unloadWorld} = 注入的主线程执行器
- * (生产 = Threads 回程口)——两个执行器均构造注入,线程契约因此离线可断言(★17)。
- *
- * <p><b>安全边界</b>:副本目录的创建/清空/删除全部限定在「副本根下、文件名恰为
- * {@code <mapId>-<会话短码>}」的路径形态内,删前断言路径形态——绝不递归删除任意路径。
- *
- * <p><b>复用窗口 = 会话生命周期</b>:{@code REUSE_DIRTY} 的复用只发生在同会话
- * (副本目录名含会话短码,天然不跨会话);会话解散经 {@link #discardSession}
- * 关闭窗口——曾发放的副本目录(含切换离开而保留在磁盘的)一律销毁。端口两侧
- * 追踪保证销毁面完整:①「该会话曾发放过的 mapId 集」(acquire 发布点记录,
- * discardSession 消费——按精确名删除,不用后缀猜测:短码本身可含 {@code '-'});
- * ②「已死短码集」(discardSession 记入)——此后任何归零处置(含迟到 in-flight
- * 经 {@code onWorldReady} 释放的)发现短码已死,无论策略一律删目录。
- *
- * <p><b>超时即失败,不降级</b>:整体 {@code orTimeout(默认 30s)}(§3.5 防护④);
- * 超时/失败/缺模板 → future 异常完成 + 清 in-flight,计数未入表;超时后迟到的复制
- * 流水走到加载点会被回滚(不卸入表),不产生无人持有的副本。
+ * <p><b>两段线程纪律</b>(§16.4 三律②):复制/删目录 = IO 执行器(虚拟线程);
+ * 世界装卸 = 主线程执行器;执行器均构造注入,线程契约离线可断言。
+ * <b>安全边界</b>:删除仅限副本根下 {@code <mapId>-<短码>} 形态,删前断言。
  */
 public final class WorldPortImpl implements WorldPort {
 
@@ -103,7 +87,6 @@ public final class WorldPortImpl implements WorldPort {
      * @param mainExecutor         主线程执行器(生产 = Threads 回程口;测试 = 直跑)
      * @param ioExecutor           IO 执行器(生产 = 虚拟线程;测试 = 直跑/可控门闩)
      * @param prepareTimeout       获取整体超时(§3.5 防护④,生产 30s;测试注入短超时)
-     * @param log                  日志
      */
     public WorldPortImpl(WorldLoader worldLoader, Path copyRoot,
                          Executor mainExecutor, Executor ioExecutor,
@@ -130,8 +113,8 @@ public final class WorldPortImpl implements WorldPort {
             existing.count.incrementAndGet();
             return CompletableFuture.completedFuture(existing.handle);
         }
-        // ② 挂 in-flight:同 key 并发 miss 时,后到者直接等待同一 future(只复制一次);
-        //    等待者在 future 完成回调里各自 +1(引用数 = 获取次数,后述 bump)
+        // ② 挂 in-flight:同 key 并发 miss 时后到者等待同一 future(只复制一次),
+        //    完成回调里各自 +1(引用数 = 获取次数)
         CompletableFuture<WorldHandle> pending = new CompletableFuture<>();
         CompletableFuture<WorldHandle> raced = inFlight.putIfAbsent(key, pending);
         if (raced != null) {
@@ -140,10 +123,8 @@ public final class WorldPortImpl implements WorldPort {
                 return handle;
             });
         }
-        // 失败/超时统一清理钩子:future 以任何异常完成 → 摘 in-flight,
-        // 否则该 key 的后续获取会永远等一个已死的 future。
-        // 对外完成点必须在摘除之后:pending 的等待者与完成钩子同栈唤醒,
-        // 直接暴露 pending 会让调用方先于摘除观察到异常(in-flight 必清被打破)
+        // 失败/超时钩子:异常完成先摘 in-flight 再对外交付——否则后续获取会
+        // 永远等已死 future,且调用方先于摘除观察到异常
         CompletableFuture<WorldHandle> observable = new CompletableFuture<>();
         pending.whenComplete((handle, err) -> {
             if (err != null) {
@@ -200,9 +181,8 @@ public final class WorldPortImpl implements WorldPort {
             // ⑥ 入表 +1(先到者的引用)、清 in-flight
             RefEntry entry = new RefEntry(handle);
             entry.count.set(1);
-            // ★ 发布点记录「曾发放」:discardSession 依据此集销毁已保留的副本目录。
-            //   会话已死(解散后才完成的迟到发布)不再记录——其目录由归零处置的
-            //   已死短码判据删除,不留给死会话一个无人消费的名册条目。
+            // ★ 发布点记录「曾发放」(discardSession 消费);会话已死的迟到发布
+            //   不记录——目录由已死短码判据删
             if (!deadShortCodes.contains(key.session().shortCode())) {
                 issuedMaps.computeIfAbsent(key.session(), s -> ConcurrentHashMap.newKeySet())
                         .add(key.mapId());
@@ -212,7 +192,7 @@ public final class WorldPortImpl implements WorldPort {
             // ⑦ 完成 future;complete 失败 = 超时恰在入表后抢先 → 回滚本次发放,不留无主句柄
             if (!pending.complete(handle)) {
                 table.remove(key, entry);
-                unloadQuietly(handle, "获取超时与完成竞争,回滚刚加载的副本: ");
+                unloadQuietly(handle, "Acquire timeout raced with completion, rolling back copy: ");
             }
         } catch (Throwable t) {
             pending.completeExceptionally(t);
@@ -279,13 +259,13 @@ public final class WorldPortImpl implements WorldPort {
             // 卸载不存档:副本是临时实例,内容处置归 ResetStrategy(模板才是母本)
             unloaded = worldLoader.unloadWorld(handle.world(), false);
         } catch (Throwable t) {
-            log.log(Level.SEVERE, "卸载世界副本异常(保留目录,不阻塞调用方): "
+            log.log(Level.SEVERE, "World copy unload threw, keeping directory: "
                     + handle.instanceName(), t);
             unloaded = false;
         }
         if (!unloaded) {
             // ⑥ 卸载失败:SEVERE + 保留目录(Bukkit 仍持引用,删目录会撞下次加载)
-            log.log(Level.SEVERE, "世界副本卸载失败,保留目录待下轮处置: {0}",
+            log.log(Level.SEVERE, "World copy unload failed, keeping directory: {0}",
                     handle.instanceName());
             done.complete(null);
             return;
@@ -297,7 +277,7 @@ public final class WorldPortImpl implements WorldPort {
                 try {
                     deleteCopyDir(mapId, shortCode);
                 } catch (Throwable t) {
-                    log.log(Level.WARNING, "删除副本目录失败(残留由下轮获取的清残留兜底): "
+                    log.log(Level.WARNING, "Copy directory delete failed, leftover handled next acquire: "
                             + mapId + "-" + shortCode, t);
                 } finally {
                     done.complete(null);       // 归零处置完成后才完成
@@ -311,14 +291,10 @@ public final class WorldPortImpl implements WorldPort {
     // ── 会话销毁:复用窗口随会话解散关闭 ───────────────────────────
 
     /**
-     * 会话名下全部副本销毁(三类覆盖,见 {@link WorldPort#discardSession}):
-     * ① 短码记入已死集(此后任何归零处置——含迟到 in-flight 经 onWorldReady 的
-     * 释放——发现短码已死,无论策略一律删目录);② 计数表该会话的存活条目:
-     * 先摘条目再逐句柄卸载不存档 + 删目录(会话已死,复用收益失效,策略无关);
-     * ③ 曾发放而已「保留」在磁盘的目录:排空发布点记录的 mapId 集,按精确名
-     * {@code mapId + "-" + 短码} 删除(不经后缀猜测;存活条目已覆盖的 mapId
-     * 不重复派删)。幂等:重复调用短码重记、条目已空、名册已空,零副作用。
-     * 失败路径与 {@link #release} 同源 best-effort(删除失败 WARN,残留兜底)。
+     * 会话名下全部副本销毁:① 短码记入已死集(此后任何归零处置,含迟到
+     * in-flight 的释放,无论策略一律删);② 存活条目先摘再逐句柄卸载不存档
+     * + 删目录;③ 已保留在磁盘的按精确名删(不后缀猜测,不重复派删)。
+     * 幂等:重复调用零副作用;失败 best-effort(删失败 WARN,残留兜底)。
      */
     @Override
     public CompletableFuture<Void> discardSession(SessionId session) {
@@ -334,8 +310,7 @@ public final class WorldPortImpl implements WorldPort {
                 liveByMap.put(row.getKey().mapId(), row.getValue().handle);
             }
         }
-        // ③ 曾发放的名册:排空(会话已死,不再有发布点写入);
-        //    存活条目将卸载+删除同一目录,不重复派删
+        // ③ 名册排空(会话已死,不再有写入);存活条目已覆盖的目录不重复派删
         Set<String> issued = issuedMaps.remove(session);
         Set<String> retainedOnly = issued == null ? Set.of()
                 : orderedWithout(issued, liveByMap.keySet());
@@ -351,7 +326,7 @@ public final class WorldPortImpl implements WorldPort {
                 try {
                     deleteCopyDir(mapId, shortCode);
                 } catch (Throwable t) {
-                    log.log(Level.WARNING, "删除副本目录失败(残留由下轮获取的清残留兜底): "
+                    log.log(Level.WARNING, "Copy directory delete failed, leftover handled next acquire: "
                             + mapId + "-" + shortCode, t);
                 } finally {
                     per.complete(null);        // 处置动作完成后才完成

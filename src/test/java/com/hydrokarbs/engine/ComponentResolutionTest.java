@@ -13,11 +13,12 @@ import java.util.logging.Logger;
 
 import org.junit.jupiter.api.Test;
 
+import com.hydrokarbs.engine.AttributeBag;
 import com.hydrokarbs.engine.component.ComponentDependencyException;
 import com.hydrokarbs.engine.component.MatchModeComponent;
 import com.hydrokarbs.engine.instance.MatchModeInstance;
 import com.hydrokarbs.engine.mode.MatchMode;
-import com.hydrokarbs.engine.mode.MatchModeMeta;
+import com.hydrokarbs.engine.mode.MatchModeMetadata;
 import com.hydrokarbs.engine.port.MatchModeInstanceServices;
 import com.hydrokarbs.engine.port.PlatformPort;
 import com.hydrokarbs.engine.session.Handoff;
@@ -120,7 +121,7 @@ class ComponentResolutionTest {
 
     private static MatchMode.Builder modeBuilder(String id) {
         return new MatchMode.Builder(id)
-                .meta(new MatchModeMeta(false, 0, 100));
+                .metadata(MatchModeMetadata.addTo(new AttributeBag.Builder(), false, 0, 100).build());
     }
 
     private static MatchModeInstance create(MatchMode mode) {

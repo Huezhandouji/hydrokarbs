@@ -11,16 +11,15 @@ import java.util.UUID;
 import com.hydrokarbs.engine.instance.Participant;
 
 /**
- * 会话名册:成员的可变登记簿,「原地位移」的位移主体(03-会话与模式切换 §3.1;
- * 2.1 施工步骤 4)。
+ * 会话名册:成员的可变登记簿,「原地位移」的位移主体(§3.1)。
  *
- * <p>名册是玩家进服/退服/被踢的唯一登记处。★ 原地位移是<b>对象恒等</b>、不是数据拷贝:
- * 内部 map 为 final,模式切换前后名册同一实例、成员集合恒等(含 DISCONNECTED 成员,
- * ★16「名册零搬运」)——任何「切换时重建名册」的写法直接测试红。
- * 位移的另一半在实例侧:{@link #toParticipants()} 每局新造参赛者视图,名册不动。
+ * <p>名册是玩家进服/退服/被踢的唯一登记处。原地位移是<b>对象恒等</b>、不是数据拷贝:
+ * 内部 map 为 final,切换前后名册同一实例、成员集合恒等(含 DISCONNECTED 成员)——
+ * 任何「切换时重建名册」的写法直接测试红。位移的另一半在实例侧:
+ * {@link #toParticipants()} 每局新造参赛者视图,名册不动。
  *
- * <p>写点收敛:成员变更只有本类四个变更口(join/remove/markDisconnected/markReconnected),
- * 外部一律经 {@link #all()} 只读快照,不得绕过名册改成员。
+ * <p>写点收敛:成员变更只有本类四个变更口(join/remove/markDisconnected/
+ * markReconnected),外部一律经 {@link #all()} 只读快照,不得绕过名册改成员。
  */
 public final class SessionRoster {
 
@@ -44,15 +43,15 @@ public final class SessionRoster {
         members.put(uuid, new SessionMember(uuid, SessionMember.ConnectionStatus.ONLINE, nowMillis));
     }
 
-    /** 真正移除(宽限期满清点或显式离开时由 2.3 的会话编排调;不在册为 no-op)。 */
+    /** 真正移除(宽限期满清点或显式离开时由会话编排调;不在册为 no-op)。 */
     public void remove(UUID uuid) {
         members.remove(uuid);
         disconnectedSince.remove(uuid);
     }
 
     /**
-     * 置 DISCONNECTED,<b>不移除</b>——宽限期内成员仍在册、重连即恢复(§3.1);
-     * ★16 要求宽限期成员在切换前后恒等。同时记入断线时刻供 {@link #disconnectedBefore} 判定。
+     * 置 DISCONNECTED,<b>不移除</b>——宽限期内成员仍在册、重连即恢复(§3.1),
+     * 且切换前后恒等;同时记入断线时刻供 {@link #disconnectedBefore} 判定。
      */
     public void markDisconnected(UUID uuid, long atMillis) {
         SessionMember current = members.get(uuid);
@@ -113,8 +112,7 @@ public final class SessionRoster {
 
     /**
      * 名册原地位移的实例侧落点:按当前成员集生成参赛者视图——<b>每局新造</b>
-     * {@link Participant},成员 uuid 集来自本名册(12-代码骨架 §12.2 {@code startAll}
-     * 的位移点;初始标记 JOINING,§3.2-B4)。名册自身不动。
+     * {@link Participant}(§12.2 位移点;初始标记 JOINING,§3.2-B4)。名册自身不动。
      */
     public Map<UUID, Participant> toParticipants() {
         Map<UUID, Participant> result = new LinkedHashMap<>();

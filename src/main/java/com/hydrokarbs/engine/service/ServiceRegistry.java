@@ -15,32 +15,17 @@ import java.util.logging.Logger;
 import com.hydrokarbs.engine.port.ConfigView;
 
 /**
- * 进程级服务的两阶段装配容器(18 号修正案 D2/§3;施工计划 1.6)。
+ * 进程级服务的两阶段装配容器(18 号修正案 D2/§3)。
  *
- * <p><b>两阶段契约</b>:第一阶段 {@link #install} 只声明(查重 id/类型,响亮点名先到者);
- * 第二阶段 {@link #seal()} 做「依赖校验 → 拓扑排序 → 按序创建 → 启动」,
- * 任一工厂/start 抛出 → <b>回滚已启动服务(逆序 stop)再抛,不留半启动态</b>
- * (镜像切换执行「绝不停在中间态」)。消费面五方法封顶
- * ({@code install/seal/get/require/shutdown};{@link #ids} 为只读诊断口)——
- * 事件转发、权限查询等扩需求一律新独立机制,不往注册表塞方法(14.32)。
+ * <p><b>两阶段契约</b>:install 只声明(查重 id/类型);seal 做「依赖校验 → 拓扑排序
+ * → 按序创建 → 启动」,任一工厂/start 抛出 → 逆序 stop 回滚再抛,不留半启动态。
+ * 消费面五方法封顶(install/seal/get/require/shutdown),扩需求一律新独立机制(14.32)。
  *
- * <p>★v1.7(25 号修正案):原 seal 尾部的能力标签注册与 shutdown 摘除随能力标签
- * 机制全链退场删除(构造器的能力注册表参数一并撤销)——
- * 两阶段契约自此不含标签步骤。
- *
- * <p><b>单线程约定(D7):全部方法主线程</b>({@code onEnable} 装配、
- * {@code onDisable} 关停天然满足);内部普通集合,不加锁。
- *
- * <p><b>核心零 Bukkit import</b>(D7):平台原语以全限定名出现在装配构造器签名,
- * import 区不含任何 Bukkit 类型——全部验收离线可测(毫秒级,无需活服)。
- *
- * <p>依赖解析口径(与组件装配校验同款):声明类型 R 被满足 ⟺ 存在服务 B 使
- * {@code R.isAssignableFrom(B.type())},按声明序取第一个满足者;声明自己主类型的
- * 自需求按依赖环处理(点名环上服务)。服务间依赖只能经 {@code ServiceSpec#requires}
- * 声明、由本表注入——禁止服务互 new(14.34)。
- *
- * <p>回滚口径:{@code start} 成功的服务才进入回滚名单——start 抛出者视为未启动,
- * 不对它调 stop(与「stop 与 start 严格对称」一致)。
+ * <p>单线程约定(D7):全部方法主线程,内部集合不加锁;核心零 Bukkit import,
+ * 平台原语只以全限定名出现在构造器签名,验收离线可测。依赖解析:R 满足 ⟺ 存在
+ * 服务 B 使 {@code R.isAssignableFrom(B.type())},按声明序取第一个;自需求按环
+ * 处理;依赖仅经 requires 声明、由本表注入,禁止服务互 new(14.34)。
+ * 回滚:start 成功的服务才进回滚名单,抛出者视为未启动。
  */
 public final class ServiceRegistry implements AutoCloseable {
 
@@ -69,8 +54,7 @@ public final class ServiceRegistry implements AutoCloseable {
     private final Env env = new Env();
 
     /**
-     * 最小构造(修正案 §3 钉定签名;★v1.7 起不再收能力注册表):无平台原语——
-     * {@code env.plugin()} 返回 null、{@code env.cfg()} 全回落缺省;离线测试用本构造即可。
+     * 最小构造:无平台原语——env.plugin() 返回 null、env.cfg() 全回落缺省;离线测试用。
      */
     public ServiceRegistry() {
         this(null, ConfigView.fallbackView());
@@ -369,7 +353,7 @@ public final class ServiceRegistry implements AutoCloseable {
                 }
             } catch (Throwable t) {
                 LOG.log(Level.WARNING,
-                        "服务 stop 异常(已捕获,不中断其余关停): " + installed.spec().id(), t);
+                        "Service stop threw (captured, shutdown continues): " + installed.spec().id(), t);
             }
         }
         started.clear();

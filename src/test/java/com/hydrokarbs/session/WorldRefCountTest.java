@@ -49,24 +49,15 @@ import com.hydrokarbs.testkit.MapTestKit;
 import com.hydrokarbs.testkit.OfflineAssembly;
 
 /**
- * ★17 世界零泄漏(16-路线图与验收 §16.2;03-会话与模式切换 §3.7;施工计划 2.4)——
- * <b>首建后永久生效,任何后续阶段不得为通过功能放宽本类断言</b>。
+ * ★17 世界零泄漏(§16.2/§3.7)——<b>首建后永久生效,不得为通过功能放宽本类断言</b>。
+ * 检验对象 = {@link WorldPortImpl} 计数与处置逻辑(假 {@link WorldLoader} 驱动,
+ * 百次循环离线可跑;真服抽查归 2.5 闭环,两处合计才是 ★17 完整证据)。★v1.8 起
+ * 复制源 = 声明自带路径、副本名 = 路径派生 id + 会话短码(基准重写,非放宽)。
  *
- * <p>检验对象是 {@link WorldPortImpl} 的计数与处置逻辑:注入假 {@link WorldLoader}
- * (内存假世界、记录装卸调用与执行器域)驱动,百次循环离线可跑;真服的世界装卸抽查
- * 并入 2.5 闭环,两处合计才是 ★17 的完整证据。★v1.8(26 号修正案议题)按新基准
- * 改写:复制源 = 声明自带 {@code worldDirectoryPath}(无模板根),副本命名基准 =
- * 路径派生 id(声明目录名)+ 会话短码——断言重写基准,不是放宽。
- *
- * <p>覆盖七组断言:①100 次循环零泄漏;②并发合并与计数;③两种处置策略;
- * ④缺声明目录(含越出父目录的路径解析);⑤准备超时;⑥REUSE_DIRTY 同会话复载
- * 不复制;⑦清残留的路径形态边界;⑧会话销毁 discardSession(★v1.4 复用窗口 =
- * 会话生命周期:REUSE_DIRTY 解散后销毁、双图全覆盖、TEMPLATE_RESTORE 结论一致、
- * 幂等无害,以及一例真会话服务 × 真端口的端到端:复制中途解散,迟到 in-flight
- * 经 onWorldReady 守卫释放、目录经已死短码判据删除);
- * 另附状态不变式四条(count≥1 / 同 instanceName 至多一条 / in-flight 必清 /
- * 归零必移除)、线程契约断言(装卸在主线程执行器、复制删目录在 IO 执行器)与
- * release 两种完成时机语义。
+ * <p>覆盖:①100 次循环零泄漏;②并发合并计数;③两种处置策略;④缺声明目录;
+ * ⑤准备超时;⑥REUSE_DIRTY 同会话复载不复制;⑦清残留路径边界;⑧discardSession
+ * (★v1.4 复用窗口 = 会话生命周期,含复制中途解散的迟到 in-flight 端到端)。
+ * 另附状态不变式四条、线程契约断言与 release 两种完成时机语义。
  */
 class WorldRefCountTest {
 
@@ -572,7 +563,7 @@ class WorldRefCountTest {
         assertEquals(0, failingPort.refCounts().size(), "归零条目仍应移除");
         assertTrue(Files.isDirectory(dir), "卸载失败应保留副本目录");
         assertTrue(logLines.stream().anyMatch(line -> line.startsWith("SEVERE|")
-                        && line.contains("保留目录")),
+                        && line.contains("keeping directory")),
                 "卸载失败应记 SEVERE 并注明保留目录: " + logLines);
     }
 

@@ -9,12 +9,13 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import com.hydrokarbs.api.MiniGameApiImpl;
+import com.hydrokarbs.engine.AttributeBag;
 import com.hydrokarbs.engine.EngineTicker;
 import com.hydrokarbs.engine.component.SessionComponentContributionRegistry;
 import com.hydrokarbs.engine.component.SessionComponent;
 import com.hydrokarbs.engine.event.SessionEventBus;
 import com.hydrokarbs.engine.mode.MatchMode;
-import com.hydrokarbs.engine.mode.MatchModeMeta;
+import com.hydrokarbs.engine.mode.MatchModeMetadata;
 import com.hydrokarbs.engine.mode.MatchModeProvider;
 import com.hydrokarbs.engine.mode.MatchModeRegistry;
 import com.hydrokarbs.engine.port.EngineServices;
@@ -135,7 +136,7 @@ public final class OfflineApi {
     public static MatchMode mode(String id, Set<String> mapTags) {
         return new MatchMode.Builder(id)
                 .mapTags(mapTags)
-                .meta(new MatchModeMeta(false, 0, 100))
+                .metadata(MatchModeMetadata.addTo(new AttributeBag.Builder(), false, 0, 100).build())
                 .build();
     }
 

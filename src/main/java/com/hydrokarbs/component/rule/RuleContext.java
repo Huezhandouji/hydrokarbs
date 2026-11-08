@@ -3,7 +3,7 @@ package com.hydrokarbs.component.rule;
 import com.hydrokarbs.engine.event.MatchModeInstanceEvent;
 
 /**
- * 规则求值上下文:实例只读读口 + 当前事件(施工计划 1.5)。
+ * 规则求值上下文:实例只读读口 + 当前事件。
  *
  * <p>then 里经 {@code ctx.component(X)} 取对方组件的强类型读口、
  * 经 {@code ctx.tick()} 读实例节拍、经 {@link #eventAs} 类型化取回触发事件。

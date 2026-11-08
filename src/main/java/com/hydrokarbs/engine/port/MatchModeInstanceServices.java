@@ -6,11 +6,10 @@ package com.hydrokarbs.engine.port;
  * <p>★ 成员封闭(恰 3 个:本实例面 / 组件查找 / 模式模板只读信息)。
  * 显示/持久化/角色/世界一律不在这里转发:要用就拿组件本身
  * ({@code svc().components().get(...)}),或走 {@code self()} 上的端口组。
- * <b>服务集不为任何具体领域增设成员</b>(★25;新增成员须过设计审查,
- * 与「给聚合根顺手加方法」同源的纪律)。
+ * <b>服务集不为任何具体领域增设成员</b>(★25;新增成员须过设计审查)。
  *
  * <p>由容器经工厂在构造期注入:组件在 awake() 之前即持有本记录,
- * 无「创建后再注入」的中间态(四条件之①)。
+ * 无「创建后再注入」的中间态。
  */
 public record MatchModeInstanceServices(
         MatchModeInstancePort self,     // 本实例面:参赛者/tick/attrs/交接/事件 + end()/switchTo()

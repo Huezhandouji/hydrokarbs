@@ -14,6 +14,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import com.hydrokarbs.engine.AttributeBag;
+import com.hydrokarbs.engine.mode.MatchModeMetadata;
 import com.hydrokarbs.engine.port.JoinDecision;
 import com.hydrokarbs.engine.session.JoinResult;
 import com.hydrokarbs.engine.session.LeaveReason;
@@ -128,7 +130,7 @@ class MiniGameApiMembersTest {
     private static com.hydrokarbs.engine.mode.MatchMode gatedMode(String id) {
         return new com.hydrokarbs.engine.mode.MatchMode.Builder(id)
                 .mapTags(OfflineApi.TAG)
-                .meta(new com.hydrokarbs.engine.mode.MatchModeMeta(false, 0, 100))
+                .metadata(MatchModeMetadata.addTo(new AttributeBag.Builder(), false, 0, 100).build())
                 .addComponent("gate", new AdmissionGateComponent.Spec(
                         player -> new JoinDecision(JoinDecision.Kind.REJECT, "测试拒绝")))
                 .build();

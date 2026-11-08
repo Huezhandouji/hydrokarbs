@@ -15,16 +15,13 @@ import com.hydrokarbs.map.MapDefinition;
 
 /**
  * 结束判定门组件:持有判定器列表,update 里按优先级降序求值,
- * 命中即 {@code svc().self().end(...)}(03-会话与模式切换 §3.4 第二代码块)。
+ * 命中即 {@code svc().self().end(...)}(03-会话与模式切换 §3.4)。
  *
  * <p>结束是组件的主动声明,不被框架轮询;引擎不认识判定器,
  * 不想要结束判定的模式就不挂本组件(要就挂、不要不挂)。
  *
- * <p>★ 不加防抖/冷却之类的自创逻辑——切换风暴防护是会话层最短驻留的事
- * (§3.5,阶段 2)。重复 end 由容器的结束请求幂等护栏挡掉,本组件不自建。
- *
- * <p>类注:实例只读视图的来源同阶段状态机组件的类注;{@code session()} 已随
- * 2.6 接通真只读视图(阶段1 已知问题 4 消除,记 deviations)。
+ * <p>★ 不自建防抖/冷却:风暴防护归会话层最短驻留(§3.5),
+ * 重复 end 由容器的结束请求幂等护栏挡掉。
  */
 public final class EndGateComponent extends MatchModeComponent {
 
@@ -91,7 +88,7 @@ public final class EndGateComponent extends MatchModeComponent {
         }
     }
 
-    /** 实例只读视图(嵌套适配器:委托服务集读口;session() 见类注)。 */
+    /** 实例只读视图(嵌套适配器,委托服务集读口)。 */
     private MatchModeInstanceView view() {
         return view;
     }
@@ -121,7 +118,7 @@ public final class EndGateComponent extends MatchModeComponent {
 
         @Override
         public SessionView session() {
-            return svc().self().session();   // 2.6 接通:经服务集自面取所属会话的只读视图
+            return svc().self().session();   // 经服务集自面取所属会话的只读视图
         }
     }
 }

@@ -23,10 +23,11 @@ import java.util.logging.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.hydrokarbs.engine.AttributeBag;
 import com.hydrokarbs.engine.component.ComponentDependencyException;
 import com.hydrokarbs.engine.component.MatchModeComponent;
 import com.hydrokarbs.engine.mode.MatchMode;
-import com.hydrokarbs.engine.mode.MatchModeMeta;
+import com.hydrokarbs.engine.mode.MatchModeMetadata;
 import com.hydrokarbs.engine.mode.MatchModeProvider;
 import com.hydrokarbs.engine.mode.MatchModeRegistry;
 import com.hydrokarbs.engine.port.MatchModeInstanceServices;
@@ -94,7 +95,7 @@ class MatchModeRegistryTest {
             public MatchMode build(MatchModeConfig cfg) {
                 MatchMode.Builder builder = new MatchMode.Builder(id)
                         .mapTags(mapTags)
-                        .meta(new MatchModeMeta(false, 0, 100));
+                        .metadata(MatchModeMetadata.addTo(new AttributeBag.Builder(), false, 0, 100).build());
                 int index = 1;
                 for (MatchModeComponent.Specification<?> spec : specs) {
                     builder.addComponent("c" + index++, spec);
@@ -157,7 +158,7 @@ class MatchModeRegistryTest {
     @Test
     void dependencyExceptionTypeIsComponentDependencyException() {
         MatchMode bad = new MatchMode.Builder("probe")
-                .meta(new MatchModeMeta(false, 0, 100))
+                .metadata(MatchModeMetadata.addTo(new AttributeBag.Builder(), false, 0, 100).build())
                 .addComponent("needs", TestComponent.requiring(hookLog, Unresolved.class))
                 .build();
         assertThrows(ComponentDependencyException.class, bad::verifyDependencies);
@@ -213,7 +214,7 @@ class MatchModeRegistryTest {
         assertNotNull(logs.stream()
                 .filter(r -> r.getLevel() == Level.INFO)
                 .map(LogRecord::getMessage)
-                .filter(m -> String.valueOf(m).contains("模式注册表初始化完成"))
+                .filter(m -> String.valueOf(m).contains("Mode registry initialized"))
                 .findFirst()
                 .orElse(null), "注册表初始化行必须出现");
     }

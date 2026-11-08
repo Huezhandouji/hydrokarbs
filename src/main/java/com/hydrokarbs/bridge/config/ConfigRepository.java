@@ -18,37 +18,21 @@ import com.hydrokarbs.engine.session.MatchModeConfig;
 import com.hydrokarbs.map.MapRegistry;
 
 /**
- * 配置装载门面 + 默认资源释放(15-适配 §15.2 文件分工;施工计划 2.2)。
+ * 配置装载门面 + 默认资源释放(§15.2)。
  *
- * <p>三件事:
- * <ul>
- *   <li>{@link #saveDefaults()}——首次启动释放默认资源(已存在不覆盖,幂等;
- *       ★v1.13/31 号起清单含 {@code config.yml} + 出厂空模式配置
- *       {@code modes/limbo.yml}(嵌套路径,父目录随建);其余玩法实例
- *       由玩法线施工阶段追加);</li>
- *   <li>{@link #loadAll(Path)}——扫 {@code modes/*.yml} → 模式配置缓存、
- *       读 {@code config.yml} 主配置树(地图不经配置装载——由外部调用方经
- *       {@link MapRegistry} 注册,单注册通道)。
- *       <b>铁律 3(局部失败)</b>:单文件失败只跳过该文件并记 SEVERE(点名文件),
- *       不中断整体装载;目录缺席/为空 = 空目录合法,不抛;</li>
- *   <li>{@link ConfigView} 实现——主配置的惰性只读面(每次 {@code get} 下钻当前
- *       配置树,reload 后自动读新值;★39)。</li>
- * </ul>
+ * <p>三件事:saveDefaults 首次启动释放默认资源(已存在不覆盖,幂等);
+ * loadAll 扫 {@code modes/*.yml} 与 {@code config.yml}——铁律 3:单文件失败
+ * 跳过 + SEVERE 不中断整体,空目录合法;{@link ConfigView} 实现——主配置
+ * 惰性只读面(reload 后自动读新值)。
  *
- * <p><b>Bukkit 触点收敛</b>:读插件 jar 内默认资源的唯一位置是嵌套接口
- * {@link DefaultResourceSource#of(JavaPlugin)}(生产装配注入);本类其余部分
- * 零 Bukkit 依赖,离线测试以临时目录 + 自写默认资源验证。
- *
- * <p><b>线程契约(§15.2)</b>:启动期装载文件量小,主线程同步执行合法;
- * 热重载路径必须在虚拟线程解析、回主线程后调用 {@code loadAll} 换引用
- * (本类字段 volatile,引用替换原子)。
+ * <p>线程契约(§15.2):启动期主线程同步合法;热重载须虚拟线程解析、
+ * 回主线程后换引用(字段 volatile,替换原子)。
  */
 public final class ConfigRepository implements ConfigView {
 
     private static final Logger DEFAULT_LOG = Logger.getLogger(ConfigRepository.class.getName());
 
-    /** 默认资源清单(幂等释放;★v1.13/31 号起含出厂空模式配置 modes/limbo.yml——
-     *  嵌套资源,装载后入缓存消除「模式配置缺失」告警;玩法线施工阶段在此追加玩法实例)。 */
+    /** 默认资源清单(幂等释放;含出厂空模式配置,嵌套路径父目录随建;玩法实例后续在此追加)。 */
     private static final List<String> DEFAULT_RESOURCES = List.of("config.yml", "modes/limbo.yml");
 
     private final Path dataDir;
@@ -57,7 +41,7 @@ public final class ConfigRepository implements ConfigView {
     private final MatchModeConfigLoader modeLoader;
     private final Logger logger;
 
-    private final MapRegistry maps;   // ★v1.2:构造注入(★v1.8 起无模板根——注册校验直接验声明路径)
+    private final MapRegistry maps;   // 地图不经配置装载:外部经 MapRegistry 单通道注册
     private volatile Map<String, Object> mainConfig = Map.of();
     private volatile Map<String, MatchModeConfig> modeConfigs = Map.of();
 
@@ -76,10 +60,8 @@ public final class ConfigRepository implements ConfigView {
     }
 
     /**
-     * 首次启动释放默认资源:<b>已存在的文件永不覆盖</b>(用户改过的配置优先,
-     * 装载时序不变式 1)。目标不存在才从默认资源拷贝;嵌套资源(如
-     * {@code modes/limbo.yml},31 号)的目标父目录逐资源随建——只建 dataDir 时
-     * 子目录缺席会 {@code NoSuchFileException};默认资源本身缺席则 WARN 跳过。
+     * 首次启动释放默认资源:<b>已存在的文件永不覆盖</b>(装载时序不变式 1)。
+     * 嵌套资源的目标父目录逐资源随建;默认资源本身缺席则 WARN 跳过。
      */
     public void saveDefaults() throws IOException {
         Files.createDirectories(dataDir);
@@ -88,10 +70,10 @@ public final class ConfigRepository implements ConfigView {
             if (Files.exists(target)) {
                 continue;                                  // 幂等:二次启动不覆盖
             }
-            Files.createDirectories(target.getParent());   // 嵌套资源父目录随建(31 号)
+            Files.createDirectories(target.getParent());   // 嵌套资源父目录随建
             try (InputStream source = defaults.open(name)) {
                 if (source == null) {
-                    logger.log(Level.WARNING, "默认资源缺席,跳过释放: {0}", name);
+                    logger.log(Level.WARNING, "Default resource missing, not extracted: {0}", name);
                     continue;
                 }
                 Files.copy(source, target);
@@ -100,14 +82,13 @@ public final class ConfigRepository implements ConfigView {
     }
 
     /**
-     * 全量装载(启动期一次;/reload 路径的实现在后续阶段,届时只是再次调用本方法)。
-     * 单文件失败跳过 + SEVERE 点名文件(铁律 3);空目录/缺目录 = 空目录合法。
+     * 全量装载(启动期一次;/reload 只是再次调用本方法)。
+     * 单文件失败跳过 + SEVERE 点名文件(铁律 3);空目录/缺目录合法。
      */
     public void loadAll() throws IOException {
         mainConfig = loadMainConfig();
         modeConfigs = loadModeConfigs();
-        logger.log(Level.INFO, "配置装载完成:模式配置 {0} 份(地图不经配置装载,由外部经 MapRegistry 注册)",
-                new Object[] { modeConfigs.size() });
+        logger.log(Level.INFO, "Config loaded: {0} mode config(s)", modeConfigs.size());
     }
 
     /** 地图目录(引用原子替换语义见 {@link MapRegistry};条目全部来自外部注册)。 */
@@ -164,13 +145,13 @@ public final class ConfigRepository implements ConfigView {
     private Map<String, Object> loadMainConfig() {
         Path file = dataDir.resolve("config.yml");
         if (!Files.isRegularFile(file)) {
-            logger.log(Level.WARNING, "主配置 config.yml 缺席,全部按内置默认值运行");
+            logger.log(Level.WARNING, "config.yml missing, using built-in defaults");
             return Map.of();
         }
         try {
             return codec.readMode(file);
         } catch (ConfigException e) {
-            logger.log(Level.SEVERE, "主配置损坏,全部按内置默认值运行(铁律 3:不中断装载)", e);
+            logger.log(Level.SEVERE, "config.yml broken, using built-in defaults", e);
             return Map.of();
         }
     }
@@ -182,7 +163,7 @@ public final class ConfigRepository implements ConfigView {
             try {
                 loaded.put(modeId, modeLoader.load(file));
             } catch (ConfigException e) {
-                logger.log(Level.SEVERE, "模式配置装载失败,跳过该文件(铁律 3): " + file, e);
+                logger.log(Level.SEVERE, "Mode config load failed, skipping: " + file, e);
             }
         }
         return Map.copyOf(loaded);

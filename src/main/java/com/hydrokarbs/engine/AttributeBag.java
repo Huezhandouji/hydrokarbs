@@ -6,22 +6,19 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * 地图声明词料容器:纯值容器,零 Bukkit 依赖。
+ * 声明词料容器:纯值容器,零 Bukkit 依赖(§2.7「状态唯一」)。持有者两处——地图声明
+ * {@code MapDefinition#metadata()} 与模式声明 {@code MatchMode#meta()}(模式元数据
+ * 约定键与中性缺省见 {@code MatchModeMetadata})。
  *
- * <p><b>定位</b>:声明级单写方、构造即冻结——{@link Builder} 是唯一写口,写只发生在
- * 声明装配期;{@link #empty()} 返回共享空实例。构造后 {@code values} 经
- * {@link Map#copyOf} 结构不可变,本类不提供任何公开写口(§2.7「状态唯一」;
- * 14.26 状态写入归属:写入方只有声明构造方一次)。
+ * <p>声明级单写方、构造即冻结——{@link Builder} 是唯一写口,写只发生在声明装配期;
+ * {@link #empty()} 返回共享空实例;构造后 {@code values} 经 {@link Map#copyOf}
+ * 结构不可变,无任何公开写口。
  *
- * <p><b>与旧属性袋的分界(ADR-0016 退场机制)</b>:旧 {@code engine/AttributeBag}
- * 承担运行期实例状态——带命名空间断言、组件授权表,并随实例 {@code close()} 整体
- * 销毁;本类只承载地图声明的静态词料:<b>无命名空间断言、无组件授权表、不参与实例
- * {@code close()} 链</b>,写方只有声明构造方一次,构造即冻结。两者仅沿用 FQCN,
- * 机制互不共享。
+ * <p>只承载声明的静态词料:<b>无命名空间断言、无组件授权表、不参与实例
+ * {@code close()} 链</b>(与旧运行期属性袋仅沿用 FQCN,机制互不共享)。
  *
- * <p><b>读口语义</b>:{@link #get} 在键不存在或值不是 {@code key.type()} 实例时
- * 返回 {@link Optional#empty()};{@link #getOrDefault} 同情形返回 fallback;
- * {@link #has} 只问键是否存在,不论值类型。
+ * <p><b>读口语义</b>:{@link #get} 键不存在或值类型不符返回 {@link Optional#empty()};
+ * {@link #getOrDefault} 同情形返回 fallback;{@link #has} 只问键是否存在,不论值类型。
  */
 public final class AttributeBag {
 

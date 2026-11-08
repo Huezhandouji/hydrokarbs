@@ -7,10 +7,8 @@ import com.hydrokarbs.engine.mode.MatchMode;
 /**
  * 模式查询窄口:切换准备阶段对注册表的唯一依赖面(03-会话与模式切换 §3.2-A1)。
  *
- * <p>从 {@link com.hydrokarbs.engine.mode.MatchModeRegistry} 提取两读口
- * ({@code require}/{@code all})为接口——切换实现面向本口编程,离线测试注入
- * 可控失败(如「已注册但依赖校验在切换时抛」)的假实现;注册表本体
- * (双发现与注册闸)不在此面。
+ * <p>从 {@link com.hydrokarbs.engine.mode.MatchModeRegistry} 提取两读口为接口;
+ * 切换实现面向本口编程(离线测试可注入假实现);注册表本体(双发现/注册闸)不在此面。
  */
 public interface ModeLookup {
 

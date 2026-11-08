@@ -5,10 +5,9 @@ import java.util.logging.Logger;
 import org.bukkit.plugin.Plugin;
 
 /**
- * 平台端口:宿主平台原语的最小落点(施工计划 1.2;节拍器/调度依赖 Plugin 类型)。
+ * 平台端口:宿主平台原语的最小落点(节拍器/调度依赖 Plugin 类型)。
  *
- * <p>成员按消费方(阶段 2 会话/节拍器接线)扩充、只增不改;
- * 扩充须过设计审查(与 svc 三成员同一纪律)。
+ * <p>成员只增不改,扩充须过设计审查。
  */
 public interface PlatformPort {
 
@@ -19,10 +18,8 @@ public interface PlatformPort {
     Plugin plugin();
 
     /**
-     * 一次性主线程延迟任务(施工计划 1.3 增补:实例侧 {@code later()} 的调度口,
-     * 经 {@code EngineServices.platform()} 注入)。
-     * 返回可取消句柄({@code close} 等价取消),由实例容器登记到发起组件名下、
-     * 随实例 close 统一回收;离线测试注入「记录并即时执行」的假实现。
+     * 一次性主线程延迟任务;返回可取消句柄({@code close} 等价取消),
+     * 由实例容器登记到发起组件名下、随实例 close 统一回收。
      */
     AutoCloseable scheduleOnce(long delayTicks, Runnable task);
 }

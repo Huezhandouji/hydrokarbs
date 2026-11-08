@@ -1,13 +1,12 @@
 package com.hydrokarbs.engine.port;
 
 /**
- * 惰性只读配置面(18 号修正案 §3 契约骨架;施工计划 1.6)。
+ * 惰性只读配置面(18 号修正案 §3)。
  *
  * <p>进程级服务的工厂经 {@code ServiceEnv#cfg()} 拿到本面读取配置。
- * 「惰性」= 每次读取穿透到底层配置源,不缓存首次结果——服主 {@code /reload}
- * 换掉底层数据后,后续 {@link #get} 自动读到新值(★39 以「换底层读新值」断言)。
- *
- * <p>实现体 = L1 {@code ConfigRepository}(bridge/config)。
+ * 「惰性」= 每次读取穿透到底层配置源,不缓存首次结果——服主换掉底层数据后,
+ * 后续 {@link #get} 自动读到新值(★39 以「换底层读新值」断言)。
+ * 实现体 = L1 {@code ConfigRepository}(bridge/config)。
  */
 public interface ConfigView {
 

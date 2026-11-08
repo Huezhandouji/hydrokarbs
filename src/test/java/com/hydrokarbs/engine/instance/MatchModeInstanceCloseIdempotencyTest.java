@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import com.hydrokarbs.engine.AttributeBag;
 import com.hydrokarbs.engine.component.MatchModeComponent;
 import com.hydrokarbs.engine.mode.MatchMode;
-import com.hydrokarbs.engine.mode.MatchModeMeta;
+import com.hydrokarbs.engine.mode.MatchModeMetadata;
 import com.hydrokarbs.engine.port.EngineServices;
 import com.hydrokarbs.engine.port.MatchModeInstanceServices;
 import com.hydrokarbs.engine.port.PlatformPort;
@@ -118,7 +118,7 @@ class MatchModeInstanceCloseIdempotencyTest {
     void closeThreeTimesStopsEachComponentExactlyOnceReverseOrder() {
         List<String> log = new ArrayList<>();
         MatchMode.Builder builder = new MatchMode.Builder("m1")
-                .meta(new MatchModeMeta(false, 0, 100));
+                .metadata(MatchModeMetadata.addTo(new AttributeBag.Builder(), false, 0, 100).build());
         for (int i = 1; i <= 3; i++) {
             builder.addComponent("c" + i, new ProbeSpec(log));
         }

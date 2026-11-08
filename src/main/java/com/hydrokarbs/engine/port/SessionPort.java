@@ -10,12 +10,10 @@ import com.hydrokarbs.engine.session.SessionId;
 import com.hydrokarbs.engine.session.SessionMember;
 
 /**
- * 会话自面:会话级组件对内核的唯一入口(★v4;02-核心概念 §2.5.1;
- * 12-代码骨架 §12.2 v4 块;镜像实例级 {@link MatchModeInstancePort})。
+ * 会话自面:会话级组件对内核的唯一入口(02-核心概念 §2.5.1)。
  *
- * <p>★v4 新增的<b>唯一「组件影响力的面」</b>只有两个行动口(D8,§2.8-决断四):
- * {@link #requestSwitch}/{@link #requestDissolve}——镜像实例级的
- * {@code switchTo()}/{@code end()};不新增其他影响力端口。
+ * <p>组件影响力的面只有两个行动口(D8,§2.8-决断四):
+ * {@link #requestSwitch}/{@link #requestDissolve},不新增其他影响力端口。
  */
 public interface SessionPort {
 

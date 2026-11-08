@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 import com.hydrokarbs.engine.mode.MatchMode;
+import com.hydrokarbs.engine.mode.MatchModeMetadata;
 import com.hydrokarbs.engine.mode.MatchModeProvider;
 import com.hydrokarbs.testkit.OfflineAssembly;
 
@@ -27,15 +28,14 @@ class EmptyMatchModeFactoryTest {
     void buildsZeroComponentWildcardModeWithOpenWindowMeta() {
         EmptyMatchModeFactory factory = new EmptyMatchModeFactory();
         assertEquals("limbo", factory.id(), "id = limbo(31 号;empty 与 Java 惯用词碰撞不可入禁词表)");
-        assertEquals(1, factory.requiredApiVersion(), "requiredApiVersion 默认 1(不消费版本增量)");
 
         MatchMode mode = factory.build(OfflineAssembly.cfg(Map.of("anything", 1)));   // cfg 被忽略
         assertEquals("limbo", mode.id());
         assertTrue(mode.components().isEmpty(), "零组件表(占位模式无玩法行为)");
         assertTrue(mode.mapTags().isEmpty(), "mapTags 空 = 通配任意地图(31 号决策 B)");
-        assertFalse(mode.meta().recordsHistory(), "占位等待不落史");
-        assertEquals(0, mode.meta().minParticipants(), "下限 0:空名册可泊(force 豁免无需动用)");
-        assertEquals(Integer.MAX_VALUE, mode.meta().maxParticipants(),
+        assertFalse(MatchModeMetadata.recordsHistory(mode.meta()), "占位等待不落史");
+        assertEquals(0, MatchModeMetadata.minParticipants(mode.meta()), "下限 0:空名册可泊(force 豁免无需动用)");
+        assertEquals(Integer.MAX_VALUE, MatchModeMetadata.maxParticipants(mode.meta()),
                 "上限全开:兜任意名册(上限永不豁免,A4/防护③)");
         mode.verifyDependencies();      // 空表依赖校验天然通过(不抛即断言)
     }

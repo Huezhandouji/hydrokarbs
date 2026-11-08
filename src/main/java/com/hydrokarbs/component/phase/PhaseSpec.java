@@ -6,19 +6,13 @@ import java.util.function.Predicate;
 import com.hydrokarbs.engine.instance.MatchModeInstanceView;
 
 /**
- * 阶段表条目:纯数据(施工计划 1.5;06-共享组件 §6.1-#4)。
+ * 阶段表条目:纯数据(06-共享组件 §6.1-#4)。只有两种条目,不设第三种:
+ * AWAIT 携带 {@code entryWhen} 谓词({@code durationTicks} 必须为 null),
+ * 谓词为真即转入下一阶段;TIMED 携带正数 {@code durationTicks}
+ * ({@code entryWhen} 必须为 null),到点转入下一阶段。
  *
- * <p>阶段表只有两种条目(领域术语表「引擎三迁组件」为权威——仅 Timed/Await,
- * 不设第三种):
- * <ul>
- *   <li>{@link Kind#AWAIT}:等待型——携带 {@code entryWhen} 谓词,为真即离开本阶段
- *       转入下一阶段(如「成员数达到下限」);{@code durationTicks} 必须为 null;</li>
- *   <li>{@link Kind#TIMED}:计时型——携带 {@code durationTicks},到点转入下一阶段;
- *       {@code entryWhen} 必须为 null。</li>
- * </ul>
- *
- * <p>构造口径即签名:两种条目各占一半字段,给错字段在紧凑构造器响亮失败——
- * 阶段是数据不是行为,模式差异只体现在 Builder 声明这张表时(14-陷阱清单 §14.12)。
+ * <p>给错字段在紧凑构造器响亮失败——阶段是数据不是行为,
+ * 模式差异只在 Builder 声明这张表时(14-陷阱清单 §14.12)。
  */
 public record PhaseSpec(String id, Kind kind, Predicate<MatchModeInstanceView> entryWhen, Integer durationTicks) {
 

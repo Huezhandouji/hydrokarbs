@@ -2,15 +2,18 @@
 # Hydrokarbs MiniGame Framework 全局配置
 # 首次启动释放本默认资源;已存在的用户配置永不覆盖。
 # ═══════════════════════════════════════════════════════════════
-config-version: 3
+config-version: 4
 
 engine:
   tick-period: 1             # 引擎节拍周期(tick);1 = 每 tick;引擎配置块不出现内容参数
 
 session:                     # 内核节律参数——会话由宿主经 SessionService.create(SessionSpec)
                              #   创建,框架启动时不建任何会话
-  fallback-mode: ""          # 切换回退模式 id(填你自己的已注册模式 id);留空或未注册时
-                             #   回退链跳过一级,直接解散兜底
+  fallback-mode: "limbo"     # 切换回退模式 id:默认 = 框架出厂空模式 limbo(占位等待,零组件,
+                             #   经框架 SPI 注册,任何有地图的部署下必可切);可改填你自己已注册的
+                             #   模式 id——该模式不应依赖「无意图结束」自持(回退环受下方
+                             #   min-dwell-ticks 节流,每窗口至多一轮);空串或未注册 = 无效回退,
+                             #   回退时 SEVERE 并强制解散会话
   min-dwell-ticks: 100       # 最短驻留(防切换风暴)
   disconnect-grace-seconds: 60   # 断线宽限(秒):宽限期内成员保留在册,重连即恢复
 

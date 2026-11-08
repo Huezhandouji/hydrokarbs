@@ -11,17 +11,17 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
 /**
- * 异步 → 主线程的唯一回程口。所有跨线程回调必须经它(§10.5 边界铁律;★8 的工具面)。
+ * 异步 → 主线程的唯一回程口。所有跨线程回调必须经它(§10.5 边界铁律)。
  *
  * <p>两条易踩规则(§10.5):
  * <ol>
- *   <li>CompletableFuture 的回调跑在完成它的那个线程上——
- *       {@link #supplyThenOnMain} 内部必须显式 runTask 回主线程,不能用 then 链"顺理成章";</li>
- *   <li>主线程上调 runTask 会被延后一 tick——统一走 {@link #runOnMain} 判断。</li>
+ *   <li>CompletableFuture 回调跑在完成它的线程上——{@link #supplyThenOnMain}
+ *       内部必须显式 runTask 回主线程;</li>
+ *   <li>主线程上调 runTask 会延后一 tick——统一走 {@link #runOnMain} 判断。</li>
  * </ol>
  *
- * <p>反向绝对禁止:主线程不得 {@code future.get()} 阻塞等待(唯一例外是
- * onDisable 的有界冲刷,阶段 5 落地)。
+ * <p>反向禁止:主线程不得 {@code future.get()} 阻塞等待(唯一例外 = onDisable
+ * 的有界冲刷,阶段 5 落地)。
  */
 public final class Threads {
 

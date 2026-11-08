@@ -1,11 +1,10 @@
 package com.hydrokarbs.engine.instance;
 
 /**
- * 实例时钟:存活 tick 计数与事件时间戳的唯一来源(12-代码骨架 §12.1/§12.2)。
+ * 实例时钟:存活 tick 计数与事件时间戳的唯一来源(§12.1/§12.2)。
  *
- * <p>★ 事件时间戳不在事件里各自取系统时钟——发布方一律经
- * {@link #occurredAtMillis()} 取值(施工计划 1.3 实现注记)。
- * 由节拍器在主线程驱动,无需并发防护。
+ * <p>事件时间戳不在事件里各自取系统时钟——发布方一律经
+ * {@link #occurredAtMillis()} 取值。由节拍器在主线程驱动,无需并发防护。
  */
 public final class MatchModeInstanceClock {
 

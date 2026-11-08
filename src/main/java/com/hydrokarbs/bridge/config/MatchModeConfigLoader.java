@@ -11,20 +11,13 @@ import java.util.logging.Logger;
 import com.hydrokarbs.engine.session.MatchModeConfig;
 
 /**
- * 模式配置装载器:{@code modes/<id>.yml} → {@link MatchModeConfig} 实现
- * (12-代码骨架 §12.1 {@code bridge/config};施工计划 2.2)。
+ * 模式配置装载器:{@code modes/<id>.yml} → {@link MatchModeConfig}。
  *
- * <p>容错三铁律的前两条在这里生效(§15.2):
- * <ul>
- *   <li>铁律 1——文件缺失 → 空 config + WARN(容错可用,不炸注册);</li>
- *   <li>铁律 2——值类型非法 → 降级默认 + WARN,不抛不崩
- *       (见 {@link YamlMatchModeConfig} 各取值方法)。</li>
- * </ul>
+ * <p>§15.2 容错铁律 1/2 在此生效:文件缺失 → 空 config + WARN;值类型非法 →
+ * 降级默认 + WARN(见 {@link YamlMatchModeConfig} 各取值方法)。解析异常 →
+ * {@link ConfigException} 带文件名(铁律 3 由装载编排层处置)。
  *
- * <p>解析异常 → {@link ConfigException} 带文件名(上抛给装载编排层,
- * 按「单文件失败跳过 + SEVERE」处置,铁律 3)。
- *
- * <p>零 Bukkit import;线程契约同 {@link YamlCodec}(解析在虚拟线程/启动期同步均可)。
+ * <p>零 Bukkit import;线程契约同 {@link YamlCodec}。
  */
 public final class MatchModeConfigLoader {
 
@@ -48,7 +41,7 @@ public final class MatchModeConfigLoader {
     public MatchModeConfig load(Path file) {
         String fileName = String.valueOf(file.getFileName());
         if (!Files.isRegularFile(file)) {
-            logger.log(Level.WARNING, "模式配置缺失(按全默认装载): {0}", fileName);
+            logger.log(Level.WARNING, "Mode config missing, using defaults: {0}", fileName);
             return YamlMatchModeConfig.of(Map.of(), fileName, logger);
         }
         return YamlMatchModeConfig.of(codec.readMode(file), fileName, logger);
@@ -92,7 +85,7 @@ public final class MatchModeConfigLoader {
                 }
             }
             if (value != null) {
-                warn(path, value, "整数");
+                warn(path, value, "integer");
             }
             return def;
         }
@@ -107,7 +100,7 @@ public final class MatchModeConfigLoader {
                 return String.valueOf(value);              // 标量可无损转字符串
             }
             if (value != null) {
-                warn(path, value, "字符串");
+                warn(path, value, "string");
             }
             return def;
         }
@@ -126,7 +119,7 @@ public final class MatchModeConfigLoader {
                 return List.of(String.valueOf(value));     // 标量降级为单元素列表(不警告)
             }
             if (value != null) {
-                warn(path, value, "字符串列表");
+                warn(path, value, "string list");
             }
             return def;
         }
@@ -161,7 +154,7 @@ public final class MatchModeConfigLoader {
         }
 
         private void warn(String path, Object value, String expect) {
-            logger.log(Level.WARNING, "配置键 {0} 期望{1},实为 {2}({3});按默认值装载",
+            logger.log(Level.WARNING, "Config key {0} expects {1}, got {2} ({3}); using default",
                     new Object[] { path, expect, value.getClass().getSimpleName(), fileName });
         }
     }

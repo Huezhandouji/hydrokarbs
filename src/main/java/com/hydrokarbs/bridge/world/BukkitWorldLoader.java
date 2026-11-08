@@ -9,12 +9,9 @@ import org.bukkit.World;
 import org.bukkit.WorldCreator;
 
 /**
- * {@link WorldLoader} 的 Bukkit 生产实现(施工计划 2.4 步骤 4)。
+ * {@link WorldLoader} 的 Bukkit 生产实现:三方法直通 Bukkit API,零自有状态。
  *
- * <p>三方法逐一对应 Bukkit API,零自有状态。签名已对本地缓存的
- * paper-api 1.21.11 以 javap 核实({@code WorldCreator.name(String)#createWorld()}、
- * {@code Bukkit.unloadWorld(World, boolean)}、{@code Bukkit.getWorlds()})。
- * 只经 {@link WorldPortImpl} 在主线程执行器内被调用——本类不自带线程判断。
+ * <p>只经 {@link WorldPortImpl} 在主线程执行器内被调用——本类不自带线程判断。
  */
 public final class BukkitWorldLoader implements WorldLoader {
 

@@ -10,30 +10,13 @@ import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 
 /**
- * 分层冻结(16-路线图与验收 §16.2 代码块;★1/★2/★3 先建/★23;施工计划 1.4)。
- *
- * <p><b>与 §16.2 字面写法的三处不同(均为检验方式的技术修正,命题不变、断言不放宽):</b>
- *
- * <p>① <b>包锚定修正</b>(施工计划 1.4 已裁决):§16.2 口语化的 {@code ..mode..}/{@code ..component..}
- * 会被 ArchUnit 的 {@code ..}(匹配零个或多个包段)把引擎自身的
- * {@code engine.mode}/{@code engine.component} 子包卷进禁止集——聚合根依赖自己嵌套的
- * 组件基类即假阳性红灯。锚定到 L3/L4 顶层包 {@code com.hydrokarbs.mode..}/{@code com.hydrokarbs.component..}
- * 后命题不变(L2 引擎不认识 L3 组件与 L4 模式)。
- *
- * <p>② <b>模式互斥用切片而非逐类两两比较</b>:逐类写法会命中同包自依赖,
- * {@code slices().matching("com.hydrokarbs.mode.(*)..").should().notDependOnEachOther()}
- * 才是「模式 A 不 import 模式 B(含大厅模式)」的准确表达。
- *
- * <p>③ <b>空集条款 {@code allowEmptyShould(true)}</b>(mode 切片与 api 包):框架基线尚无
- * 模式包与 api 包(首模式归 P4、api 面 P7.6 才落盘),ArchUnit 对「无可检查对象」的规则
- * 默认按红处理(防包模式拼错后静默通过)。此处显式声明空集合法——空集上不存在可违反的
- * 依赖,命题空洞成立;第一个模式包/第一个 api 类出现后规则即有牙齿,并非放宽断言。
- *
- * <p><b>SHDF 扩展线条款(★3/★23)规则先建、框架基线空转</b>:宿主桥接包
- * {@code com.hydrokarbs.bridge.role..} 与宿主插件包坐标在框架基线不存在(宿主扩展随
- * Shdf 具体玩法设计案交付),两规则当前通过;价值在于宿主侧接入后第一行越界 import
- * 即红,而非事后补网。宿主插件包坐标以合法包名 {@code com.shdf.roleplugin..} 占位
- * (文档的尖括号占位符非法,见规则处注释),接入时由宿主工程注入实际坐标。
+ * 分层冻结(§16.2 代码块;★1/★2/★3/★23)。与 §16.2 字面写法的三处技术修正
+ * (命题不变、断言不放宽):①包锚定到 L3/L4 顶层包——ArchUnit 的 {@code ..} 会把
+ * 引擎自身 {@code engine.mode}/{@code engine.component} 子包卷进禁止集造成假阳性;
+ * ②模式互斥用切片表达(逐类写法命中同包自依赖);③空集条款 {@code allowEmptyShould(true)}
+ * (mode 切片与 api 包)——空集上无可违反依赖,首个模式包/api 类出现后即有牙齿。
+ * SHDF 扩展条款(★3/★23)规则先建、框架基线空转:宿主坐标以 {@code com.shdf.roleplugin..}
+ * 占位,接入时由宿主工程注入实际坐标。
  */
 @AnalyzeClasses(packages = "com.hydrokarbs", importOptions = ImportOption.DoNotIncludeTests.class)
 class LayeringTest {
@@ -80,21 +63,10 @@ class LayeringTest {
                     .resideInAnyPackage("com.hydrokarbs.bridge.role..");
 
     /**
-     * ★-末条:api 只依赖 engine 与平台原语(§16.2 原样;7.1 起 api 包有实体)。
-     *
-     * <p><b>允许集三项技术修正(7.1 施工,命题不变、非放宽断言;施工计划 §3 纪律 4
-     * 的「修测试单独说明」在册)</b>:
-     * ① {@code net.kyori..}——Adventure 是 Paper 平台文本 API,引擎签名已在用
-     * Component({@code MatchMode#displayName}/{@code MatchModeInfoPort});
-     * {@code MiniGameApiImpl} 的 displayName/description MiniMessage 序列化属同源
-     * 平台原语(07 §7.1 步骤 3 转换表);
-     * ② {@code com.hydrokarbs.map..}——07 §7.2 白名单明列「map/ 读面」;
-     * {@code maps()} 快照的转换源是 {@code MapRegistry}/{@code MapDefinition}
-     * (registerMap(Plugin, MapDefinition) 签名必需,7.5 增量同源);
-     * ③ {@code com.hydrokarbs.api..}——api 自身组合面:接口↔view record 同包依赖,
-     * 冻结面的组成部分(非引擎外部件,放行不构成任何越界通道)。
-     * 命题不变:api 仍不得依赖 mode/**、component/**、bridge/**、service/**、
-     * 任何 Impl(测试类已经类级 DoNotIncludeTests 移出分析)。
+     * ★-末条:api 只依赖 engine 与平台原语(§16.2)。允许集三项技术修正(命题不变、
+     * 非放宽):{@code net.kyori..}(Adventure 平台原语)、{@code com.hydrokarbs.map..}
+     * (07 §7.2 白名单「map/ 读面」,registerMap 签名必需)、{@code com.hydrokarbs.api..}
+     * (接口↔view record 同包组合面)。api 仍不得依赖 mode/component/bridge/service/任何 Impl。
      */
     @ArchTest
     static final ArchRule apiDependsOnlyOnEngine =

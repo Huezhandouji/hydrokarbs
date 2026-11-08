@@ -13,20 +13,11 @@ import com.hydrokarbs.engine.instance.Participant;
 import com.hydrokarbs.engine.port.MatchModeInstanceServices;
 
 /**
- * 第三方私有组件:模式包内自建组件的「基类纪律照抄到位」最小样例
- * (07-公共API §7.2「第三方组件」行;7.2 施工文档步骤 6;照 02-核心概念 §2.4)。
- *
- * <p>纪律要点:
- * <ul>
- *   <li>{@code create} 是唯一装配点(构造私有,容器内单一创建路径,§2.4 四条件之④);
- *       svc 构造期注入,先于一切钩子(四条件之①);</li>
- *   <li>玩家可见副作用最早发生在 {@link #start()}(§2.4 钩子注释)——awake 期
- *       只解析依赖,这里只播报一句,零其他副作用;</li>
- *   <li>异常只隔离自己的实例(§3.1 quarantine,§13.4 约束段)——框架兜底,
- *       组件自身无需再包 try/catch;</li>
- *   <li>播报用 {@code Component.text} 固定文案:不含任何玩家可控串,零 MiniMessage
- *       注入面(§14.10)。</li>
- * </ul>
+ * 第三方私有组件:模式包内自建组件的基类纪律最小样例(§7.2「第三方组件」/§2.4)。
+ * 纪律要点:{@code create} 是唯一装配点(构造私有);svc 构造期注入先于一切钩子;
+ * 玩家可见副作用最早发生在 {@link #start()}(awake 只解析依赖);异常只隔离自己
+ * 的实例(框架兜底,无需自包 try/catch);播报用 {@code Component.text} 固定文案,
+ * 零 MiniMessage 注入面(§14.10)。
  */
 public final class TheirBannerComponent extends MatchModeComponent {
 

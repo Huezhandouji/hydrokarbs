@@ -1,24 +1,17 @@
 package com.hydrokarbs.engine.session;
 
 /**
- * 模式切换的结果货币(03-会话与模式切换 §3.2;一种结果格式贯穿,错误语义统一)。
+ * 模式切换的结果货币(§3.2;一种结果格式贯穿,错误语义统一)。
  *
- * <p><b>拒绝码收缩论证(★v3.1,§0.5.3,javadoc 抄录)</b>:拒绝码只有
- * 「调用方要据此做决定」的 3 个语义——
- * <ul>
- *   <li>{@link Reason#MODE_NOT_FOUND}:要的模式 id 不在注册表(调用方写错了 id);</li>
- *   <li>{@link Reason#SWITCH_IN_PROGRESS}:会话正处于切换中,重入被拒(时序冲突,稍后重试);</li>
- *   <li>{@link Reason#REJECTED_BY_TARGET_MODE}:其余一切拒绝。</li>
- * </ul>
- * 历史上 11 个码(能力缺失/地图不适配/人数窗上下/最短驻留未满/依赖解析失败/世界准备失败/
- * 回退失败等)全部并入 {@link Reason#REJECTED_BY_TARGET_MODE}:它们枚举的是
- * 「目标模式的声明为什么拒绝」,那是声明侧检查管线的内部词汇,不是切换契约的公共词汇——
- * 码表越富,调用方越被诱惑去 switch 细目,而细目恰恰是框架不认识的「内容」。
- * 诊断信息一律走 {@link Rejected#detail()}(人读清单,只进日志与提示,不是可编程契约)。
+ * <p><b>拒绝码恰 3 个</b>(★v3.1 冻结契约,沿革见 §0.5.3):{@link Reason#MODE_NOT_FOUND}
+ * (id 不在注册表)、{@link Reason#SWITCH_IN_PROGRESS}(切换中重入被拒)、
+ * {@link Reason#REJECTED_BY_TARGET_MODE}(其余一切拒绝)。码表刻意收缩:细目是
+ * 声明侧检查管线的内部词汇,不是切换契约的公共词汇;诊断信息一律走
+ * {@link Rejected#detail()}(人读清单,只进日志与提示,不是可编程契约)。
  *
  * <p><b>{@link Succeeded#cause} 的语义</b>:携带触发本次切换的 {@link EndResult}——
  * 外部调用(含 force 强切)为 {@link EndResult#nowhere()},自动切换(结束请求驱动)
- * 为结束请求原样透传;调用方据此区分「主动切」与「打完自动切」。
+ * 为结束请求原样透传,调用方据此区分「主动切」与「打完自动切」。
  */
 public sealed interface SwitchResult {
 

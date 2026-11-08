@@ -13,19 +13,13 @@ import com.hydrokarbs.engine.session.MatchModeConfig;
 import com.hydrokarbs.map.MapDefinition;
 
 /**
- * 模式组件基类:行为单元(02-核心概念 §2.4)。
+ * 模式组件基类:行为单元(§2.4)。只允许出现 svc 字段 + 钩子方法 +
+ * {@code getComponent}——「顺手加个 helper」属越界。
  *
- * <p>只允许出现 svc 字段 + 钩子方法 + {@code getComponent}——「顺手加个 helper」属越界。
- * ★「基类不认识子类」:不为任何具体领域设通用视图,要协作就 {@code getComponent}
- * 按类型取对方组件的强类型读口。
- *
- * <p>svc 构造期注入四条件:
- * <ol>
- *   <li>注入先于一切钩子(组件在 awake() 之前即持有服务集,无「创建后再注入」的中间态);</li>
- *   <li>{@code final} 字段只注一次,重复注入在类型上不可表达;</li>
- *   <li>{@link #svc()} 未注入即抛,绝不静默 null;</li>
- *   <li>组件构造点唯一(容器内单一创建路径,id 与服务集成对产生)。</li>
- * </ol>
+ * <p>★「基类不认识子类」:不为任何具体领域设通用视图,要协作就
+ * {@code getComponent} 按类型取对方组件的强类型读口。svc 构造期注入四条件:
+ * ①注入先于一切钩子 ②{@code final} 只注一次 ③{@link #svc()} 未注入即抛
+ * ④构造点唯一(id 与服务集成对产生)。
  *
  * <p>所有玩法状态住在组件里,组件是状态唯一主人并提供强类型读口;
  * 跨组件读写走状态主人的读口,不开放裸写。

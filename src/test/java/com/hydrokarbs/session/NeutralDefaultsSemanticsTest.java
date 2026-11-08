@@ -13,9 +13,11 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
+import com.hydrokarbs.engine.AttributeBag;
 import com.hydrokarbs.engine.component.MatchModeComponent;
 import com.hydrokarbs.engine.event.SessionEvent;
 import com.hydrokarbs.engine.mode.MatchMode;
+import com.hydrokarbs.engine.mode.MatchModeMetadata;
 import com.hydrokarbs.engine.session.DissolveReason;
 import com.hydrokarbs.engine.session.Handoff;
 import com.hydrokarbs.engine.session.MatchModeSelection;
@@ -28,20 +30,16 @@ import com.hydrokarbs.engine.session.SwitchResult;
 import com.hydrokarbs.testkit.ProbeComponent;
 
 /**
- * 空值/缺省语义(★v1.3 首建,★v1.13/31 号修正案 <b>supersede</b> 整类重立——
- * 缺省去向管线退场 + 出厂空模式兜底后,首切失败与回退无效的处置全线收敛):
+ * 空值/缺省语义(★v1.3 首建;★v1.13/31 号 supersede 整类重立):
  * <ol>
- *   <li>初始模式<b>空</b>或<b>未注册</b> → 启动记 WARN + 会话泊回退模式(31 号:
- *       不再「无实例驻留」);泊回退走完整落位并记切换时刻——后补非 force 切换在
- *       最短驻留窗口内被防护①拒(相对旧「WARN+保留、立即可切」是行为回退,登记),
- *       推时钟过窗口或传 force 后可用;</li>
- *   <li>回退模式<b>空串</b> → SEVERE(不再 WARN)+ 即时 FALLBACK_DISSOLVE 解散 +
- *       成员安置(默认配置下出厂空模式兜底,空串 = 配置错误);</li>
- *   <li>回退模式<b>未注册</b> → 回退切换被拒 → SEVERE(带 detail)+ 解散
- *       (fallbackSwitch 单点判据,与空串同归)。</li>
+ *   <li>初始模式空/未注册 → WARN + 泊回退模式;后补非 force 切换受最短驻留约束
+ *       (推时钟过窗口或传 force 后可用);</li>
+ *   <li>回退模式空串 → SEVERE + 即时 FALLBACK_DISSOLVE 解散 + 成员安置
+ *       (默认配置下出厂空模式兜底,空串 = 配置错误);</li>
+ *   <li>回退模式未注册 → 回退切换被拒 → SEVERE(带 detail)+ 解散。</li>
  * </ol>
- * 附:模式侧空 mapTags = 通配任意地图(31 号决策 B)——无 mapId 选区直切成功。
- * 引擎源码零模式字面量(§14.21 纪律不变;出厂模式 id 只住 provider 类与默认资源)。
+ * 附:模式侧空 mapTags = 通配任意地图(31 号决策 B);模式元数据零键 = 中性缺省
+ * (min=0/上限全开,经 MatchModeMetadata 读法)。引擎源码零模式字面量(§14.21)。
  */
 @Timeout(30)
 class NeutralDefaultsSemanticsTest {
@@ -65,10 +63,10 @@ class NeutralDefaultsSemanticsTest {
         assertEquals("fb", session.currentInstance().orElseThrow().modeId(),
                 "首切失败泊回退模式(31 号:不再无实例驻留)");
         assertTrue(harness.logLines.stream().anyMatch(line ->
-                        line.startsWith("WARNING") && line.contains("初始模式")),
+                        line.startsWith("WARNING") && line.contains("initial mode")),
                 "空初始模式记 WARN: " + harness.logLines);
         assertTrue(harness.logLines.stream().noneMatch(line ->
-                        line.startsWith("SEVERE") && line.contains("初始模式")),
+                        line.startsWith("SEVERE") && line.contains("initial mode")),
                 "首切失败仍不 SEVERE(已知问题#5 消除口径保留): " + harness.logLines);
 
         // 泊回退已记切换时刻:窗口内非 force 后补被防护①拒(31 号行为回退,登记)
@@ -101,10 +99,10 @@ class NeutralDefaultsSemanticsTest {
         assertEquals(SessionState.RUNNING, session.state());
         assertEquals("fb", session.currentInstance().orElseThrow().modeId(), "泊回退模式");
         assertTrue(harness.logLines.stream().anyMatch(line ->
-                        line.startsWith("WARNING") && line.contains("初始模式")),
+                        line.startsWith("WARNING") && line.contains("initial mode")),
                 "未注册初始模式同样记 WARN: " + harness.logLines);
         assertTrue(harness.logLines.stream().noneMatch(line ->
-                        line.startsWith("SEVERE") && line.contains("初始模式")),
+                        line.startsWith("SEVERE") && line.contains("initial mode")),
                 "未注册初始模式不再 SEVERE: " + harness.logLines);
     }
 
@@ -135,7 +133,7 @@ class NeutralDefaultsSemanticsTest {
                         && dissolved.reason() == DissolveReason.FALLBACK_DISSOLVE),
                 "发解散事件(原因 FALLBACK_DISSOLVE)");
         assertTrue(harness.logLines.stream().anyMatch(line ->
-                        line.startsWith("SEVERE") && line.contains("回退模式未配置")),
+                        line.startsWith("SEVERE") && line.contains("no valid fallback mode")),
                 "空串回退记 SEVERE(31 号,原 WARN 跳级): " + harness.logLines);
         assertEquals(1, harness.relocations.size(), "成员安置函数被调用(二级兜底)");
     }
@@ -167,10 +165,10 @@ class NeutralDefaultsSemanticsTest {
                         && dissolved.reason() == DissolveReason.FALLBACK_DISSOLVE),
                 "发解散事件(原因 FALLBACK_DISSOLVE)");
         assertTrue(harness.logLines.stream().anyMatch(line ->
-                        line.startsWith("SEVERE") && line.contains("回退切换被拒")),
+                        line.startsWith("SEVERE") && line.contains("fallback switch rejected")),
                 "回退被拒记 SEVERE(带 detail): " + harness.logLines);
         assertTrue(harness.logLines.stream().anyMatch(line ->
-                        line.startsWith("SEVERE") && line.contains("回退模式亦装配失败")),
+                        line.startsWith("SEVERE") && line.contains("fallback mode also failed")),
                 "二级兜底 SEVERE 日志原样(dissolveNow 终态行): " + harness.logLines);
     }
 
@@ -180,7 +178,7 @@ class NeutralDefaultsSemanticsTest {
     void emptyMapTagsModeResolvesMapByWildcardAndSwitches() throws Exception {
         // 空 mapTags 模式(harness 的便捷口固定带 TAG,这里显式 Build 以落空集)
         MatchMode wild = new MatchMode.Builder("wild")
-                .meta(new com.hydrokarbs.engine.mode.MatchModeMeta(false, 0, 100))
+                .metadata(MatchModeMetadata.addTo(new AttributeBag.Builder(), false, 0, 100).build())
                 .build();
         SwitchHarness harness = new SwitchHarness("fb",
                 SwitchHarness.mode("fb", 0, 100),
@@ -194,5 +192,41 @@ class NeutralDefaultsSemanticsTest {
         assertInstanceOf(SwitchResult.Succeeded.class, future.get(2, TimeUnit.SECONDS),
                 "空 mapTags 通配:装载序第一张池内图可解析(31 号决策 B)");
         assertEquals("wild", session.currentInstance().orElseThrow().modeId(), "直切实例就位");
+    }
+
+    // ── ⑤ 模式元数据零键 = 中性缺省:非 force 人数窗仍按约定键读法裁决 ──────
+
+    @Test
+    void noKeyMetadataModeDefaultsToNeutralWindowAndSwitches() throws Exception {
+        // 零键模式:.metadata(AttributeBag.empty())——不写任何约定键(min/max 缺席)
+        MatchMode noKeys = new MatchMode.Builder("nokeys")
+                .mapTags(SwitchHarness.TAG)
+                .metadata(AttributeBag.empty())
+                .build();
+        SwitchHarness harness = new SwitchHarness("fb",
+                SwitchHarness.mode("fb", 0, 100),
+                SwitchHarness.mode("tight", 5, 100),
+                noKeys);
+        Session session = harness.createSession("s1", "fb");
+        for (int i = 0; i < 3; i++) {
+            harness.service.join(session.id(), UUID.randomUUID());
+        }
+        for (int i = 0; i < SessionPolicy.DEFAULT_MIN_DWELL_TICKS + 2; i++) {
+            session.idleTimers();
+        }
+
+        // 3 人在册、非 force 切入 min=5 模式:A4 人数窗外拒绝(缺省读法仍在岗)
+        SwitchResult.Rejected rejected = assertInstanceOf(SwitchResult.Rejected.class,
+                harness.service.switchMode(session.id(), MatchModeSelection.of("tight"), Handoff.empty())
+                        .get(2, TimeUnit.SECONDS));
+        assertTrue(rejected.detail().contains("人数窗"), "3 人 < min=5 非豁免被拒: " + rejected.detail());
+
+        // 切入零键模式本身成功:min 缺省 = 0、max 缺省 = 全开(中性缺省语义没坏)
+        var future = harness.service.switchMode(session.id(), MatchModeSelection.of("nokeys"), Handoff.empty());
+        harness.ticker.tickAll();
+        harness.ticker.tickAll();
+        assertInstanceOf(SwitchResult.Succeeded.class, future.get(2, TimeUnit.SECONDS),
+                "零键元数据 = 中性缺省:3 人在册非 force 可切入");
+        assertEquals("nokeys", session.currentInstance().orElseThrow().modeId(), "零键模式实例就位");
     }
 }

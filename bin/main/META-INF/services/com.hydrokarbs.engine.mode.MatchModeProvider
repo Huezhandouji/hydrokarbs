@@ -1,3 +1,5 @@
 # 新增模式加一行工厂 FQCN(13-协作与生态 §13.1-#7)
 # 本文件是「新增模式」的唯一登记处:一行工厂全限定名 + 一份 modes/<id>.yml
-# (框架内模式经此登记;跨插件第三方经 ServicesManager 注册,见 07 §7.2)
+# (框架内模式经此登记——31 号起首行 = 出厂兜底空模式;跨插件第三方经
+#  MiniGameApi#registerMode 显式注册,见 07 §7.2)
+com.hydrokarbs.mode.empty.EmptyMatchModeFactory

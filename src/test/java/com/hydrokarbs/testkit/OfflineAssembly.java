@@ -10,7 +10,7 @@ import com.hydrokarbs.engine.AttributeBag;
 import com.hydrokarbs.engine.component.MatchModeComponent;
 import com.hydrokarbs.engine.instance.MatchModeInstance;
 import com.hydrokarbs.engine.mode.MatchMode;
-import com.hydrokarbs.engine.mode.MatchModeMeta;
+import com.hydrokarbs.engine.mode.MatchModeMetadata;
 import com.hydrokarbs.engine.port.EngineServices;
 import com.hydrokarbs.engine.port.PlatformPort;
 import com.hydrokarbs.engine.session.EndResult;
@@ -141,7 +141,7 @@ public final class OfflineAssembly {
     /** 四件套拼装便捷口:按传入顺序 addComponent(声明序 = 入表序;mapTags 缺省空集)。 */
     public static MatchMode mode(String modeId, LinkedHashMap<String, MatchModeComponent.Specification<?>> specs) {
         MatchMode.Builder builder = new MatchMode.Builder(modeId)
-                .meta(new MatchModeMeta(false, 0, 100));
+                .metadata(MatchModeMetadata.addTo(new AttributeBag.Builder(), false, 0, 100).build());
         specs.forEach(builder::addComponent);
         return builder.build();
     }

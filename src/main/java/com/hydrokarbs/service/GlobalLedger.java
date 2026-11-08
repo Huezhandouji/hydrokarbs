@@ -12,25 +12,18 @@ import com.hydrokarbs.engine.session.SessionId;
 import com.hydrokarbs.engine.session.SessionService;
 
 /**
- * 参照服务一:<b>上报式</b>——会话侧出本地账本,进程级服务收终局快照汇总
- * (18 号修正案 §3 参照服务骨架;选型④「会话本地权威 + 服务汇总」,状态唯一不破)。
+ * 参照服务一:<b>上报式</b>——会话侧出本地账本,本服务收终局快照汇总(18 号 §3,
+ * 选型④「会话本地权威 + 服务汇总」,状态唯一不破)。<b>总账</b>({@link #total()})
+ * 只收已解散会话终局账本(订阅 {@code SessionDissolved} 汇入);{@link #sweep()}
+ * 对存活会话只读快照拉取(D5 通道②)刷新 {@link #liveView()};{@link #liveTotals()}
+ * = 总账 + 存活实时(现算)。
  *
- * <p>两条数据面:<b>总账</b>({@link #total()})只收已解散会话的终局账本,
- * 经订阅 {@code SessionDissolved} 事件汇入;{@link #sweep()} 对存活会话做
- * <b>只读快照拉取</b>(遍历 {@link SessionService#all()},D5 通道②),刷新
- * {@link #liveView()} 实时视图;{@link #liveTotals()} = 总账 + 存活实时(现算)。
+ * <p>纪律(14.31/D5):拉到的账本一律拷贝成值快照,不持会话侧可变集合,永不
+ * 持有活实例/活组件引用;订阅回调经注销哨兵包裹,{@link #stop()} 之后迟到
+ * 回调不再写入。
  *
- * <p>纪律(14.31/D5):快照通道「只读快照、现取不缓存」——拉到的账本一律拷贝成
- * 值快照,不持有会话侧的可变集合;永不持有活实例/活组件引用。订阅回调经
- * 注销哨兵包裹:{@link #stop()} 之后总线里的迟到回调不再写入任何状态
- * (D5 通道①「订阅句柄在 stop 注销」——总线逐条注销面归 2.6,本阶段以哨兵实现
- * 同等语义,登记于施工偏差)。
- *
- * <p>依赖一律经构造器注入(镜像 L0 工厂闭包捕获口径),服务间依赖只能经
- * {@code ServiceSpec#requires} 声明、由注册表注入,禁止互 new(14.34)。
- * {@link #stop()} 与 {@link #start()} 严格对称:start 建立「哨兵 + 订阅」,
- * stop 注销订阅并清实时视图;总账是终局汇总,随服务对象整体生灭
- * (服务生命周期 = 进程生命周期,关停后无消费面)。
+ * <p>依赖经构造器注入;服务间依赖只能经 {@code ServiceSpec#requires} 声明注入,
+ * 禁止互 new(14.34);stop 与 start 严格对称,总账随服务对象整体生灭。
  */
 public final class GlobalLedger implements ServiceLifecycle {
 

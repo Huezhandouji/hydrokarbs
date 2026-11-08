@@ -7,21 +7,13 @@ import com.hydrokarbs.engine.session.LeaveReason;
 import com.hydrokarbs.engine.session.SessionId;
 
 /**
- * 会话事件根:会话生命周期的公开信号(03-会话与模式切换 §3.1 事件行;
- * 2.1 施工步骤 10 载荷表)。
+ * 会话事件根:会话生命周期的公开信号(§3.1)。八个事件:创建/成员进出与重连/
+ * 切换起讫/解散/组件故障隔离;给外部订阅者与跨切面逻辑用(不是 Bukkit Event、
+ * 不进服务端总线)。{@code occurredAtMillis} 供「时间戳单调」类断言与日志,
+ * 语义字段以各 record 的业务载荷为准。
  *
- * <p>七个事件:创建/成员进出与重连/切换起讫/解散(2.1 冻结词汇与载荷);★v4(2.6)
- * 增补第八个 {@link SessionComponentQuarantined}(会话组件故障隔离,D9/§3.8)。
- * 给外部订阅者与跨切面逻辑用(★ 不是 Bukkit Event、不进服务端总线)。
- * {@code occurredAtMillis} 是事件时间戳(发布时刻,便捷工厂取系统时钟),
- * 供「时间戳单调」类断言与日志;语义字段以各 record 的业务载荷为准。
- *
- * <p>与实例事件族({@link MatchModeInstanceEvent})的边界:本族描述会话层事实
- * (成员/模式/生死),那族描述实例层事实(参赛者/生命周期)——两族不互转、不共用类型;
- * 要跨层就同时订两条总线。
- *
- * <p>封闭子族 = 本文件的八个嵌套 record(permits 省略,由编译器按同文件推断;
- * ★v4 前为七个,2.6 增 {@link SessionComponentQuarantined})。
+ * <p>与实例事件族({@link MatchModeInstanceEvent})分属会话层/实例层事实——
+ * 两族不互转、不共用类型,要跨层就同时订两条总线。
  * 枚举载荷({@link LeaveReason}/{@link DissolveReason})的取值集变更须过设计评审
  * (它们是事实上的对外词汇)。
  */
@@ -50,9 +42,8 @@ public sealed interface SessionEvent {
     }
 
     /**
-     * 成员离开(退出/被踢)。语义(2.1 要点,已登记待裁决):quit/kick 即发本事件
-     * 并把成员标记 DISCONNECTED 保留在册;宽限期满由清点移除,不再单独发事件;
-     * 宽限期内重连发 {@link MemberReconnected}。
+     * 成员离开(退出/被踢):quit/kick 即发本事件并把成员标记 DISCONNECTED 保留在册;
+     * 宽限期满由清点移除,不再单独发事件;宽限期内重连发 {@link MemberReconnected}。
      */
     record MemberLeft(SessionId session, UUID member, LeaveReason reason, long occurredAtMillis)
             implements SessionEvent {
@@ -103,9 +94,9 @@ public sealed interface SessionEvent {
     }
 
     /**
-     * ★v4(2.6):会话组件故障隔离(会话 id / 组件 id / 原因;D9、§3.8、§11.4)——
-     * 组件在 update/onEvent 抛异常后被停用(此后跳过其派发),<b>会话不解散</b>、
-     * 其余组件照常。发布点在 {@code SessionComponentRegistry} 的隔离路径。
+     * 会话组件故障隔离(D9/§3.8/§11.4):组件在 update/onEvent 抛异常后被停用
+     * (此后跳过其派发),<b>会话不解散</b>、其余组件照常。
+     * 发布点在 {@code SessionComponentRegistry} 的隔离路径。
      */
     record SessionComponentQuarantined(SessionId session, String componentId, String reason,
                                        long occurredAtMillis) implements SessionEvent {

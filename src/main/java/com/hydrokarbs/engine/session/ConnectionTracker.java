@@ -9,15 +9,11 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * 连接追踪:断线宽限的记账员(03-会话与模式切换 §3.1 职责清单「连接追踪」行;
- * 默认 60s,15-PaperMC 适配 §15.2 {@code disconnect-grace-seconds})。
- *
- * <p>与名册的分工:本类只管「断线多久了」(记账/销账/到期清点),
- * 名册增删的执行权在会话编排(2.3)——到期者由会话清点后调
- * {@link SessionRoster#remove(UUID)} 真正除名。
- *
- * <p>★ 不自起任务(14-陷阱清单 §14.6):到期清点由
- * {@link Session#idleTimers(long)} 每 tick 调 {@link #sweep(long)} 驱动。
+ * 连接追踪:断线宽限的记账员(03-会话与模式切换 §3.1;默认 60s,§15.2
+ * {@code disconnect-grace-seconds})。只管记账/销账/到期清点,名册增删的执行权
+ * 在会话编排(到期者由其调 {@link SessionRoster#remove(UUID)} 除名)。
+ * 不自起任务(14 §14.6):清点由 {@link Session#idleTimers(long)} 每 tick 调
+ * {@link #sweep(long)} 驱动。
  */
 public final class ConnectionTracker {
 

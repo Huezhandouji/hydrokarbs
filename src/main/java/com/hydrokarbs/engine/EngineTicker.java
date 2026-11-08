@@ -12,18 +12,14 @@ import com.hydrokarbs.engine.session.Session;
 import com.hydrokarbs.engine.session.SessionService;
 
 /**
- * 全局节拍器:单一周期任务驱动全部会话(12-代码骨架 §12.2 第三个代码块)。
+ * 全局节拍器:单一周期任务驱动全部会话(§12.2)。
  *
- * <p>★ 每实例一个周期任务是事故源(14-陷阱清单 §14.6)——全局唯一本类一个句柄,
- * onDisable 必取消,否则重载后任务翻倍;组件级「稍后执行」走实例端口的
- * later 登记,不在本类开口。
+ * <p>★ 每实例一个周期任务是事故源(§14.6)——全局唯一本类一个句柄,onDisable 必取消,
+ * 否则重载后任务翻倍;组件级「稍后执行」走实例端口的 later 登记,不在本类开口。
  *
- * <p>★ 切换的唯一驱动点是 {@link #tickAll()} 里的
- * {@code runPendingSwitch()}(03-会话与模式切换 §3.5 防重入的机械保证)——
- * 「事件栈内不发切换」从本阶段起就是纪律。★v4(2.6):每会话驱动序扩为<b>四步</b>
- * (新增 ③ 会话组件派发;空场计时移出内核 ④,§3.8)——<b>顺序是规格的一部分</b>:
- * ① 待处理切换 → ② 当前实例派发 → ③ 会话组件派发(每 tick 必调,与实例有无无关)
- * → ④ 内核清点(断线宽限等)。
+ * <p>★ 切换的唯一驱动点是 {@link #tickAll()} 里的 {@code runPendingSwitch()}
+ * (§3.5 防重入的机械保证)——「事件栈内不发切换」是纪律。★v4(2.6):每会话驱动序
+ * 四步,<b>顺序是规格的一部分</b>(§3.8),详见 {@link #tickAll()}。
  */
 public final class EngineTicker implements AutoCloseable {
 
@@ -57,13 +53,10 @@ public final class EngineTicker implements AutoCloseable {
     }
 
     /**
-     * 驱动全部会话一拍(2.3 起提 public:会话层离线测试直调驱动,与 Bukkit 接线分离;
-     * 自动切换的调用栈检查以本类帧为准,见 {@code SessionServiceImpl} 的防护闸门)。
+     * 驱动全部会话一拍(离线测试可直调;自动切换的调用栈检查以本类帧为准)。
      * ★v4(2.6):每会话四步,<b>顺序是规格的一部分</b>(§3.8/§11.4):
-     * ① 待处理切换(机制,不变)→ ② 当前实例派发(若有实例;不变)→
-     * ③ <b>会话组件派发(每 tick 必调,与实例有无无关;切换间隙照常——实例侧组件
-     * 不 tick、会话组件照常 tick;组件级异常在 ③ 内部按 D9 隔离,不外抛)</b> →
-     * ④ 内核清点(断线宽限等;机制,不变——空场计时已下放组件,D11)。
+     * ① 待处理切换 → ② 当前实例派发(若有实例)→ ③ 会话组件派发(每 tick 必调,
+     * 与实例有无无关;组件级异常按 D9 隔离,不外抛)→ ④ 内核清点(断线宽限等)。
      * 逐会话 try/catch——一个坏会话被隔离,不拖死别的会话。
      */
     public void tickAll() {
@@ -74,7 +67,7 @@ public final class EngineTicker implements AutoCloseable {
                 session.tickSessionComponents();     // ③ 会话组件派发(★v4;每 tick 必调)
                 session.idleTimers();                // ④ 内核节律(宽限清点;空场已下放)
             } catch (Throwable t) {
-                LOG.log(Level.SEVERE, "会话驱动异常(隔离该会话,其余照常): " + session.id().value(), t);
+                LOG.log(Level.SEVERE, "Session drive threw (quarantined, others continue): " + session.id().value(), t);
                 session.quarantine();
             }
         }

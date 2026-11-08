@@ -9,16 +9,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * 实例事件总线:{@link MatchModeInstanceEventPort} 的实现体
- * (02-核心概念 §2.5 {@code events()} 行;11-事件流 §11.1/§11.3)。
+ * 实例事件总线:{@link MatchModeInstanceEventPort} 实现体(§2.5/§11.1)。
  *
  * <ul>
- *   <li>订阅登记:类型可赋值匹配;优先级降序;同级按订阅序;</li>
- *   <li>发布:主线程同步派发(派发中订阅者会改状态,异步派发等于数据竞争,§11.1);</li>
- *   <li>逐订阅者 try/catch 隔离:单个订阅者抛异常不中断其他订阅者,记 WARN 后继续
- *       (§11.1/§11.3「一个坏消费者不会毁掉整局」);</li>
- *   <li>{@link #clear()}:实例 close 时调用,清掉全部订阅
- *       (组件的订阅回收由此一把完成——组件自己不注销)。</li>
+ *   <li>类型可赋值匹配;优先级降序,同级按订阅序;</li>
+ *   <li>主线程同步派发(派发中订阅者会改状态,异步派发等于数据竞争,§11.1);</li>
+ *   <li>逐订阅者异常隔离:单个订阅者抛异常不中断其他订阅者,记 WARN 后继续(§11.3);</li>
+ *   <li>{@link #clear()}:实例 close 时调用,组件订阅统一回收——组件自己不注销。</li>
  * </ul>
  */
 public final class MatchModeInstanceEventBus implements MatchModeInstanceEventPort {
@@ -56,7 +53,7 @@ public final class MatchModeInstanceEventBus implements MatchModeInstanceEventPo
             registration.subscriber().accept(registration.type().cast(event));
         } catch (Throwable t) {
             LOG.log(Level.WARNING,
-                    "实例事件订阅者异常(已隔离,事件类型 " + event.getClass().getName() + ")", t);
+                    "Instance event subscriber threw (isolated): " + event.getClass().getName(), t);
         }
     }
 

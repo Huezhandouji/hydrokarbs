@@ -3,22 +3,12 @@ package com.hydrokarbs.engine.session;
 import java.util.List;
 
 /**
- * 单次模式运行的只读配置视图(施工计划 1.2 立最小口、2.2 扩全口;15-适配 §15.2)。
- *
- * <p><b>落位注记</b>:12-代码骨架 §12.1 未列本类型;按消费方(聚合根工厂
- * {@code MatchModeProvider#build} 与注册表装配)就近置于 {@code engine/session/}
- * (1.2 原落位沿用,施工计划 2.2 登记过裁决)。实现体 = L1
+ * 单次模式运行的只读配置视图(15-适配 §15.2)。实现体 = L1
  * {@code bridge/config/MatchModeConfigLoader}(读 {@code modes/<id>.yml})。
  *
- * <p><b>容错契约(接口契约的一部分,15-适配 §15.2 铁律 1/2)</b>:
- * <ul>
- *   <li><b>缺键必须有默认值</b>——每个取值方法都带 {@code def} 形参,
- *       path 不存在时返回 def,绝不抛、绝不裸取;</li>
- *   <li><b>非法值降级 + 警告,不崩</b>——值类型与目标类型不符时返回 def
- *       并记 WARNING 日志(实现体职责),不中断装载。</li>
- * </ul>
- *
- * <p>成员按消费方(各通用组件与模式工厂)扩充、只增不改。
+ * <p><b>容错契约(§15.2 铁律 1/2)</b>:缺键必须有默认值——取值方法都带 def 形参,
+ * path 不存在返回 def,绝不抛、绝不裸取;非法值降级 + 警告不崩——类型不符返回 def
+ * 并记 WARNING 日志(实现体职责)。成员按消费方扩充、只增不改。
  */
 public interface MatchModeConfig {
 

@@ -37,7 +37,7 @@ import com.hydrokarbs.engine.AttributeBag;
 import com.hydrokarbs.engine.component.SessionComponentContributionRegistry;
 import com.hydrokarbs.engine.event.SessionEventBus;
 import com.hydrokarbs.engine.mode.MatchMode;
-import com.hydrokarbs.engine.mode.MatchModeMeta;
+import com.hydrokarbs.engine.mode.MatchModeMetadata;
 import com.hydrokarbs.engine.mode.MatchModeProvider;
 import com.hydrokarbs.engine.mode.MatchModeRegistry;
 import com.hydrokarbs.engine.port.ResetStrategy;
@@ -391,7 +391,7 @@ class MiniGameApiImplTest {
                         .displayName(Component.text("竞技", NamedTextColor.RED))
                         .description(List.of(Component.text("第一行", NamedTextColor.RED),
                                 Component.text("第二行", NamedTextColor.RED)))
-                        .meta(new MatchModeMeta(false, 2, 10))
+                        .metadata(MatchModeMetadata.addTo(new AttributeBag.Builder(), false, 2, 10).build())
                         .build();
             }
         };

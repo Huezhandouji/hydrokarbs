@@ -30,6 +30,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.hydrokarbs.engine.AttributeBag;
 import com.hydrokarbs.engine.component.ComponentDependencyException;
 import com.hydrokarbs.engine.component.MatchModeComponent;
 import com.hydrokarbs.engine.component.SessionComponent;
@@ -37,7 +38,7 @@ import com.hydrokarbs.engine.component.SessionComponentContributionRegistry;
 import com.hydrokarbs.engine.event.SessionEventBus;
 import com.hydrokarbs.engine.instance.MatchModeInstance;
 import com.hydrokarbs.engine.mode.MatchMode;
-import com.hydrokarbs.engine.mode.MatchModeMeta;
+import com.hydrokarbs.engine.mode.MatchModeMetadata;
 import com.hydrokarbs.engine.mode.MatchModeProvider;
 import com.hydrokarbs.engine.mode.MatchModeRegistry;
 import com.hydrokarbs.engine.port.EngineServices;
@@ -63,40 +64,16 @@ import com.hydrokarbs.testkit.TestComponent;
 import com.hydrokarbs.testkit.TestPlugins;
 
 /**
- * 跨插件模式可注册(★20 首建;★v1.6 显式注册收敛后以 api 面承载,离线)。
- * fake 插件的工厂经 {@code MiniGameApi#registerMode} 收录后:出现在目录、可被
- * switchMode 选中、卸载即摘除且受影响会话回退(§16.2-★20 原文口径)。
- *
+ * 跨插件模式可注册(★20;★v1.6 起经 api 显式注册面承载,离线):
  * <ol>
- *   <li>①合法 fake provider → {@code api.registerMode} → 注册表目录 +
- *       Impl {@code modes()} 含对应 {@link MatchModeInfo};</li>
- *   <li>②可被 switchMode 选中:经公共面 {@code switchMode} 发起(fake SessionService
- *       记录调用;断言目标 id 与 force 语义;注册表 {@code require} 通过佐证
- *       切换阶段 A 的目标查找不拒);</li>
- *   <li>③坏 provider(缺必需依赖 / build 抛 / 重复 id)响亮抛 + 不进注册表
- *       (§2.6 注册闸;★v1.6 起显式注册统一响亮口径——调用方可捕获,onEnable
- *       注册失败 = 拒载信号;原事件通道「SEVERE + 跳过/忽略后来者」口径随
- *       ServicesManager 通道退场);</li>
- *   <li>④{@code api.unregisterMode} 目录摘除 + 受影响会话恰一次回退切换
- *       (fallback 经 Impl 构造的 {@code Supplier<String>} 读口、force 豁免,
- *       §13.4/§3.5);fallback 空(★v1.3 R3)/未注册 → 恰一次
- *       {@code FALLBACK_DISSOLVE};{@code Rejected(SWITCH_IN_PROGRESS)} → WARN
- *       放弃不自旋(§14.17);越权摘他人 id 响亮拒、未知 id 幂等 no-op;</li>
- *   <li>④c D14 通道一显式面:{@code registerSessionComponents}/
- *       {@code unregisterSessionComponents} 按提供方插件键收录/摘除(14.38);</li>
- *   <li>⑤主仓生产源零第三方示例字面量 {@code their_mode}(§14.13:注册是
- *       「注册表被动收」,示例只住 examples/TheirPlugin;§16.2-4 禁词精神)。</li>
- * </ol>
- *
- * <p><b>★v1.6 迁移说明(24 号修正案)</b>:原 {@code ProviderServiceListener} 内核
- * 直调({@code ingestProvider}/{@code removeProvider}/贡献两内核)与先启补收录命题
- * 随 ServicesManager 通道退场——注册/摘除/回退编排全部迁入 {@code MiniGameApiImpl}
- * 显式面,本测试改经 api 面逐一承载既有命题(断言语义零放宽;响亮化命题见 ③)。
- * {@code Plugin} 以动态代理占位(身份键;{@link TestPlugins} 先例)。零 Bukkit 静态调用。
- *
- * <p><b>⑤落定说明</b>:断言 ⑤ 以测试内源码扫描实现(随全量测试常驻门禁,而非
- * 一次性 grep);fake 模式 id 取中性 {@code probe_mode},与其分居主仓 src/(零
- * their_mode)与 examples/TheirPlugin/(their_mode 唯一住址)两侧。
+ *   <li>①合法 provider 注册后入目录({@code modes()} 含对应 {@link MatchModeInfo});</li>
+ *   <li>②可被 switchMode 选中(fake SessionService 记录调用,断言目标 id 与 force);</li>
+ *   <li>③坏 provider(缺必需依赖/build 抛/重复 id)响亮抛 + 不进注册表(§2.6);</li>
+ *   <li>④unregisterMode 摘除 + 受影响会话恰一次回退;fallback 空/未注册 → 解散兜底;
+ *       越权摘响亮拒、未知幂等(§14.17);</li>
+ *   <li>④c 会话组件显式面按提供方收录/摘除(14.38);</li>
+ *   <li>⑤主仓生产源零示例字面量 {@code their_mode}(§14.13;测试内源码扫描实现)。</li>
+ * </ol>Plugin 以动态代理占位;零 Bukkit 静态调用。
  */
 class ThirdPartyModeRegistrationTest {
 
@@ -159,7 +136,7 @@ class ThirdPartyModeRegistrationTest {
             public MatchMode build(MatchModeConfig cfg) {
                 MatchMode.Builder builder = new MatchMode.Builder(id)
                         .mapTags(mapTags)
-                        .meta(new MatchModeMeta(false, 1, 16));
+                        .metadata(MatchModeMetadata.addTo(new AttributeBag.Builder(), false, 1, 16).build());
                 int index = 1;
                 for (MatchModeComponent.Specification<?> spec : specs) {
                     builder.addComponent("c" + index++, spec);
@@ -556,48 +533,6 @@ class ThirdPartyModeRegistrationTest {
         api.registerSessionComponents(provider, List.of(second));   // 同提供方重注册(幂等重收录)
 
         assertEquals(List.of(second), contributions.merged(), "合并视图 = 新贡献(旧条目被同键摘除)");
-    }
-
-    // ── ④b ★41 增款(★v1.1-D7):版本协商打点(原事件收录打点迁入 api 注册点) ──
-
-    @Test
-    void requiredApiVersionDefaultsToOne() {
-        // 默认方法 = 既有实现零迁移(D7:只增默认方法,不破既有实现)
-        assertEquals(1, provider(PROBE, Set.of("demo")).requiredApiVersion(),
-                "MatchModeProvider#requiredApiVersion 默认 1(不消费任何版本增量)");
-    }
-
-    @Test
-    void registerModeLogsDeclaredRequiredApiVersion() {
-        captureImplLog();
-        MiniGameApiImpl api = new MiniGameApiImpl(new RecordingService(), registry,
-                new MapRegistry(),
-                new SessionEventBus(), contributions, Runnable::run, () -> "");
-        MatchModeProvider demanding = new MatchModeProvider() {
-            @Override
-            public String id() {
-                return PROBE;
-            }
-
-            @Override
-            public MatchMode build(MatchModeConfig cfg) {
-                return new MatchMode.Builder(id())
-                        .mapTags(Set.of("demo"))
-                        .meta(new MatchModeMeta(false, 1, 16))
-                        .build();
-            }
-
-            @Override
-            public int requiredApiVersion() {
-                return 3;                       // 声明要求 v3 面(地图注册等)
-            }
-        };
-
-        api.registerMode(TestPlugins.named("their-plugin"), demanding);
-
-        assertTrue(hasLevelContaining(Level.INFO, "requiredApiVersion=3"),
-                "注册点对每个 Provider 记录其声明要求(D7/14.36 注册处打点)");
-        assertEquals(PROBE, registry.require(PROBE).id(), "声明高版本不拒收录(注册照常,打点供诊断)");
     }
 
     // ── ⑤ 主仓生产源零第三方示例字面量 ───────────────────────────

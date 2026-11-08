@@ -37,25 +37,15 @@ import com.hydrokarbs.testkit.OfflineAssembly;
 import com.hydrokarbs.testkit.TestComponent;
 
 /**
- * 全生命周期离线测试——P0 出口闸门(施工计划 1.5;16-路线图与验收 §16.1-P0):
- * 假模式「test_mode」挂阶段/结束门/规则簿/测试件四件套,真容器驱动
- * awake → start → update×N → onHandoff → stop 全链,断言:
- * 钩子序与派发序(经测试件交叉观察阶段/结束门状态)、启动事件发布且订阅者收到、
- * 计时型到点发转场事件、结束门命中后结束请求收口一次(幂等)且结局可读、
- * 交接写入自己命名空间、close 后资源回收且不再派发、close 幂等。
+ * 全生命周期离线测试——P0 出口闸门(§16.1-P0):假模式挂阶段/结束门/规则簿/测试件
+ * 四件套,真容器驱动 awake → start → update×N → onHandoff → stop 全链,断言钩子序
+ * 与派发序、启动事件发布、计时型到点转场、结束请求收口一次(幂等)、交接写自己
+ * 命名空间、close 后回收不再派发、close 幂等。
  *
- * <p>住 component.lifecycle 包、经 {@link LifecycleDriver} 驱动装配二段的原因:
- * {@code awakeAll}/{@code startAll} 为包私有(「离线测试同包直调」是 1.3 口径),
- * 而本测试 import 三组件——若住在 engine.instance 包会被分层冻结测试判红
- * (★1 扫 classpath 含测试类:引擎包的类不得依赖 component)。零 Bukkit import。
- *
- * <p>派发序断言的口径说明:容器「按声明序无条件广播」的机械断言在 1.3 的
- * 容器冒烟测试(三个探针件)冻结;本测试以四件套里的测试件交叉观察
- * 「阶段/结束门在测试件之前更新」(转场拍看到新阶段 id、命中拍看到结局已就绪),
- * 规则簿的行为面在事件钩子(其 update 为空操作),声明序同样由容器保证。
- *
- * <p>时间线口径:容器发布启动事件时会推进一拍时钟,故阶段件以 tick=0 进入首阶段、
- * 实例第一拍即「首阶段停留第 2 拍」——计时型条目在第一拍到点转场属预期。
+ * <p>住 component.lifecycle 包:{@code awakeAll}/{@code startAll} 包私有须同包直调,
+ * 且本测试 import 组件——住 engine.instance 会判红(★1 含测试类)。零 Bukkit import。
+ * 派发序经测试件交叉观察「阶段/结束门先于测试件更新」;容器启动事件推进一拍时钟,
+ * 计时型条目第一拍到点转场属预期。
  */
 class OfflineFullLifecycleTest {
 

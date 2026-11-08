@@ -22,30 +22,17 @@ import com.hydrokarbs.engine.session.SessionService;
 
 /**
  * 会话管理子命令(经 {@link Subcommand} seam 挂到 {@code /hydrokarbs} 根):
+ * {@code session} 列出存活会话;{@code session status <id>} 单会话详情;
+ * {@code session end <id>} 强制解散(委托
+ * {@link SessionService#dissolve(SessionId, DissolveReason)} 的 {@code ADMIN} 通道,
+ * 幂等,REUSE_DIRTY 副本随解散连带销毁)。
  *
- * <ul>
- *   <li>{@code session}——列出存活会话与当前模式(无参,现状文案沿用);</li>
- *   <li>{@code session status <id>}——单会话详情(状态/当前模式/成员 uuid+连接态);</li>
- *   <li>{@code session end <id>}——强制解散(委托
- *       {@link SessionService#dissolve(SessionId, DissolveReason)} 的 {@code ADMIN}
- *       通道,幂等;REUSE_DIRTY 副本随解散连带销毁,命令侧零善后)。</li>
- * </ul>
+ * <p>权限:查询走 {@code hydrokarbs.command.session},解散走 {@code hydrokarbs.command.session.end}
+ * (树形父子:有 end 无 session 则 end 不可见;节点不进 plugin.yml,默认 op)。
  *
- * <p>权限:{@code hydrokarbs.command.session}(查询)+
- * {@code hydrokarbs.command.session.end}(解散,树形父子语义:有 end 无 session
- * 则 end 不可见);节点不进 plugin.yml(现状即不声明,默认 op 生效)。
- *
- * <p><b>命令体零业务分支</b>(L0 判据):只做参数装配后委托 {@link SessionService};
- * 目标用会话 id 而非玩家名——SessionId 是 dissolve 签名的规范句柄(1:1 装配),
- * 零名册待机会话只能按 id 寻址,建议列表直取 {@code all()} 免 Bukkit 名字解析;
- * 按玩家查询留作未来经 seam 增补({@code sessionOf(UUID)} 已在服务面)。
- *
- * <p>{@code <id>} 参数类型写死 {@code greedyString()}(尾参贪婪全收):SessionId
- * 值域 = 宿主任意非空串(含空格/CJK/Unicode),{@code word()} 仅放行
- * {@code [0-9A-Za-z_.+-]} 且遇空格截断——建议列表给的真实 id 会解析失败/截断,
- * {@code session(id)} 永远 miss 误报不存在;不反向收紧 SessionId 字符集(冻结值对象)。
- * status 用显式 {@code literal} 而非裸参:SessionId 宿主自由命名,裸参会与
- * end 等字面量子命令撞名遮蔽。
+ * <p>{@code <id>} 写死 {@code greedyString()}:SessionId 值域 = 宿主任意非空串
+ * (含空格/Unicode),{@code word()} 遇空格截断、真实 id 会误报不存在,不反向
+ * 收紧其字符集(冻结值对象);status 用显式 {@code literal} 防与 end 撞名。
  */
 public final class SessionCommand implements Subcommand {
 
@@ -124,8 +111,7 @@ public final class SessionCommand implements Subcommand {
             return com.mojang.brigadier.Command.SINGLE_SUCCESS;
         }
         try {
-            // 幂等(不存在 FINE 忽略、DISSOLVING 护栏吸收);REUSE_DIRTY 副本随
-            // discardSession 连带销毁——命令侧零善后
+            // 幂等(护栏吸收异常态);REUSE_DIRTY 副本随解散连带销毁——命令侧零善后
             sessions.dissolve(new SessionId(rawId), DissolveReason.ADMIN);
         } catch (RuntimeException err) {
             sender.sendMessage(Component.text("解散执行异常: " + err, NamedTextColor.RED));

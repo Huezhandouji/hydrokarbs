@@ -12,12 +12,11 @@ import com.hydrokarbs.engine.session.SessionId;
 import com.hydrokarbs.map.MapDefinition;
 
 /**
- * 世界端口占位实现(2.4 交付 {@code WorldPortImpl} 前的装配垫片;接口不变,替换即生效)。
+ * 世界端口占位实现(装配垫片;接口不变,替换即生效)。
  *
- * <p>行为:获取 = 即时返回就绪句柄——不复制模板、不建副本目录,世界对象按声明
- * 路径派生的目录名(★v1.8:声明按路径直交)查找,缺席时回落服务器主世界
- * (副本语义/引用计数/还原策略全部留给 2.4);释放 = 立即完成的空操作。
- * 切换链路(阶段 A6 与释放接缝)经它与真实现同构,冒烟与离线测试零改动换实现。
+ * <p>行为:获取 = 即时返回就绪句柄——不复制模板、不建副本目录,世界对象按
+ * 声明路径派生的目录名查找,缺席时回落服务器主世界(副本语义/引用计数/还原
+ * 策略全部留给真实现);释放 = 立即完成的空操作。链路与真实现同构,零改动换实现。
  */
 public final class PlaceholderWorldPort implements WorldPort {
 
@@ -38,13 +37,13 @@ public final class PlaceholderWorldPort implements WorldPort {
 
     @Override
     public CompletableFuture<Void> release(WorldHandle handle) {
-        return CompletableFuture.completedFuture(null);    // 引用计数与副本处置归 2.4
+        return CompletableFuture.completedFuture(null);    // 引用计数与副本处置归真实现
     }
 
     @Override
     public CompletableFuture<Void> discardSession(SessionId session) {
         Objects.requireNonNull(session, "session");
-        // 不复制模板、不建副本目录,无副本可销毁(立即完成空操作,语义与 release 同源)
+        // 无副本可销毁:立即完成空操作(语义与 release 同源)
         return CompletableFuture.completedFuture(null);
     }
 }

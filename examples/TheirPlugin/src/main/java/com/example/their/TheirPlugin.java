@@ -33,36 +33,21 @@ import com.hydrokarbs.engine.session.LeaveReason;
 import com.hydrokarbs.map.MapDefinition;
 
 /**
- * 第三方消费样例插件(7.5 施工文档步骤 10;13-扩展步骤 §13.4/§13.10/§13.11 的
- * 可运行落地版):真实消费 {@link MiniGameApi} v7 面——成员操作编排(D2)、
- * 会话事件订阅(D3)、SessionRecipe 单次建会话(D14 通道二)、
- * 注册式地图(★v1.2;落盘 → 构造声明 → registerMap,14.39)、模式与会话组件
- * 显式注册(★v1.6;原 ServicesManager 提供方通道退场),并演示
- * 版本协商拒载(14.36)、句柄只在实例字段(14.38)与禁 shade 构建断言(14.35,
- * 见 build.gradle.kts 的 {@code verifyNoFrameworkClasses} 任务)。
- * ★v1.7(25 号修正案):原 D4 能力标签演示(/their capability 命令)随标签机制
- * 全链退场删除——外部能力 = 会话组件桥接(本插件的贡献组件
- * {@link TheirSessionComponent} 即桥接形态)。
- * ★v1.8(26 号修正案议题):地图声明按路径直交——「模板寄居框架数据目录」
- * 约定退场,模板解包到<b>本插件自己的数据目录</b> {@code maps/<id>/},
- * 声明自带 {@code worldDirectoryPath},标签走 {@code MapDefinition.TAGS} 词料键。
+ * 第三方消费样例插件(13-扩展步骤 §13.4/§13.10/§13.11 落地版):真实消费
+ * {@link MiniGameApi} 面——成员操作、事件订阅、SessionRecipe 建会话、注册式地图
+ * (解包到本插件数据目录,★v1.8)、模式与会话组件显式注册(★v1.6)、api 缺席拒载
+ * (版本协商面已于 ★v1.14/32 号退场)、句柄只在实例字段(14.38)、禁 shade 断言
+ * (14.35);外部能力 = 会话组件桥接({@link TheirSessionComponent})。
  *
- * <p><b>onEnable 固定顺序</b>(§13.4 步骤表 + §13.11 表;★v1.6 显式注册口径):
- * 首行查版本 → registerMode(工厂;响亮抛 = 拒载信号)→ registerSessionComponents
- * (贡献)→ 解包模板 → 构造 MapDefinition → registerMap → 订阅事件 → 注册命令。
- *
- * <p><b>文本纪律(14.10)</b>:命令参数(会话 id/模式 id)是玩家可控串,
- * 一律 {@code Component.text(...)} 固定样式拼接——<b>不过 MiniMessage</b>,零注入面。
- *
- * <p><b>卸载善后(14.38/§13.11 步骤 6)</b>:订阅句柄 onDisable 显式 close;
- * 注册式地图显式 unregisterMap(正用摘除被拒 = 保留并 WARN,20-D4);
- * 模式/贡献显式 unregisterMode/unregisterSessionComponents(镜像 unregisterMap 纪律;
- * 提供方插件的框架侧 PluginDisableEvent 兜底仍存在,消费方显式反注册是防御性纪律)。
+ * <p><b>onEnable 固定顺序</b>(§13.4/§13.11):首行查 api 在场(缺席即拒载)→
+ * registerMode(响亮抛 = 拒载信号)→ registerSessionComponents → 解包模板 →
+ * 构造声明 → registerMap → 订阅事件 → 注册命令。玩家可控串一律
+ * {@code Component.text(...)},不过 MiniMessage。
+ * <b>卸载善后(14.38)</b>:句柄显式 close;地图/模式/贡献显式反注册(正用摘除被拒
+ * = 保留,20-D4;框架侧兜底仍在,显式反注册是防御性纪律)。
  */
 public final class TheirPlugin extends JavaPlugin {
 
-    /** 本样例要求的最低 API_VERSION(14.36:低于即拒载,不崩服;★v1.8 起 = 7)。 */
-    static final int REQUIRED_API_VERSION = 7;
     /** 注册式地图 id(= 声明目录名,路径派生 id 的目录段;模板随本 jar 分发)。 */
     static final String MAP_ID = "their_arena";
     /** 模板资源根(jar 内资源路径;解包目标 = 本插件数据目录 maps/<id>/,★v1.8 路径直交)。 */
@@ -84,10 +69,8 @@ public final class TheirPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         api = getServer().getServicesManager().load(MiniGameApi.class);
-        if (shouldDisable(api == null ? null : Integer.valueOf(api.API_VERSION),
-                REQUIRED_API_VERSION)) {
-            getLogger().severe("Hydrokarbs 缺席或 API_VERSION 过低(要求 >= "
-                    + REQUIRED_API_VERSION + "),禁用 " + getName());
+        if (api == null) {                  // 框架缺席 → 拒载不崩服(版本协商面已退场,★v1.14/32 号)
+            getLogger().severe("Hydrokarbs missing, disabling " + getName());
             setEnabled(false);
             return;
         }
@@ -98,8 +81,7 @@ public final class TheirPlugin extends JavaPlugin {
         registerTheirArenaMap();            // ★v1.2:解包 → 构造声明 → registerMap(14.39)
         subscribeSessionEvents();           // D3:句柄存实例字段
         registerCommands();                 // 自有 Brigadier 命令树
-        getLogger().info("TheirPlugin enabled: API_VERSION=" + api.API_VERSION
-                + "(消费样例:成员/事件/recipe/注册式地图/显式注册)");
+        getLogger().info("TheirPlugin enabled");
     }
 
     @Override
@@ -112,18 +94,13 @@ public final class TheirPlugin extends JavaPlugin {
             try {
                 api.unregisterMap(this, MAP_ID);          // §13.11 步骤 6(正用被拒 = 保留)
             } catch (RuntimeException refused) {
-                getLogger().warning("卸载摘除注册式地图被拒(正用保留,20-D4): "
+                getLogger().warning("Map removal refused, map kept: "
                         + refused.getMessage());
             }
             api.unregisterSessionComponents(this);        // 镜像 unregisterMap 纪律(幂等;兜底仍存在)
             api.unregisterMode(this, TheirModeFactory.MODE_ID);   // 幂等;兜底仍存在(回退编排同款)
         }
         api = null;
-    }
-
-    /** 版本协商判定(静态便于测试源集直测;apiVersion 为 null = api 缺席)。 */
-    static boolean shouldDisable(Integer apiVersion, int required) {
-        return apiVersion == null || apiVersion < required;
     }
 
     // ── D3:会话事件订阅(快照消费演示;句柄存实例字段) ──────────────────
@@ -135,11 +112,11 @@ public final class TheirPlugin extends JavaPlugin {
     /** 快照消费:只读、现取、不持活引用(14.31 同款禁令;看板粒度止于会话级,§13.10 例二)。 */
     private void onSessionEvent(SessionEventView view) {
         if (view instanceof SessionEventView.Dissolved dissolved) {
-            getLogger().info("[看板] 会话解散: " + dissolved.session().value()
-                    + "(原因 " + dissolved.reason() + ")");
+            getLogger().info("[Board] Session dissolved: " + dissolved.session().value()
+                    + " (reason " + dissolved.reason() + ")");
         } else if (view instanceof SessionEventView.ModeSwitchCompleted completed) {
-            getLogger().info("[看板] 切换完成: " + completed.session().value()
-                    + " " + completed.from() + " → " + completed.to());
+            getLogger().info("[Board] Switch completed: " + completed.session().value()
+                    + " " + completed.from() + " -> " + completed.to());
         }
     }
 
@@ -160,7 +137,7 @@ public final class TheirPlugin extends JavaPlugin {
         // ③ 注册(注册期校验:世界目录存在性带绝对路径/id 查重点名先到者——缺失响亮抛,
         //    20-D3;本样例按设计让异常上抛 = 拒载信号,onEnable 失败即插件禁用)
         MapInfo info = api.registerMap(this, map);
-        getLogger().info("注册式地图已登记: " + info.id() + "(maps() 可见,可被 switchMode 选中)");
+        getLogger().info("Map registered: " + info.id());
     }
 
     /** 单文件解包(目标 = 框架数据目录;幂等覆盖,重复 enable 安全)。 */

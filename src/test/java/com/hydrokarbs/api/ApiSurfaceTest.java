@@ -26,7 +26,7 @@ import com.hydrokarbs.engine.event.SessionEventBus;
 import com.hydrokarbs.engine.instance.MatchModeInstanceView;
 import com.hydrokarbs.engine.instance.Participant;
 import com.hydrokarbs.engine.mode.MatchMode;
-import com.hydrokarbs.engine.mode.MatchModeMeta;
+import com.hydrokarbs.engine.mode.MatchModeMetadata;
 import com.hydrokarbs.engine.mode.MatchModeProvider;
 import com.hydrokarbs.engine.port.JoinAdmission;
 import com.hydrokarbs.engine.port.JoinContext;
@@ -66,70 +66,15 @@ import com.hydrokarbs.api.view.MatchModeInfo;
 import com.hydrokarbs.api.view.SessionInfo;
 
 /**
- * API 编译面封闭(★44;★v1.1-D6;7.5 施工文档步骤 9):双断言——
- * ①{@code MiniGameApi} 全部方法签名(参数/返回/泛型实参)只引用白名单类型 + JDK
- * + Bukkit/Adventure 平台原语;②白名单内类型的公开签名<b>只增不改</b>(反射快照,
- * 首建基线存 {@link #BASELINE} 常量,2026-10-25 7.5 首建)。
+ * API 编译面封闭(★44;07 §7.2):双断言——①{@code MiniGameApi} 签名只引用
+ * 白名单类型 + JDK + Bukkit/Adventure 平台原语;②白名单公开签名<b>只增不改</b>
+ * (反射快照与 {@link #BASELINE} 全等;删/改即红,新增须追加基线行并说明)。
  *
- * <p><b>API 编译面白名单逐包清单(07 §7.2 表「API 编译面白名单 ★v1.1-D6」行的口径
- * 细化落盘处;与 {@link #WHITELIST} 常量一一对应,新增条目须同步注释出处)</b>:
- * <ul>
- *   <li>{@code api/**}——MiniGameApi、EventSubscription、SessionRecipe、
- *       SessionEventView 八 record、view 三快照
- *       (07 §7.1/§7.2;SessionInfo 定名裁决见其 javadoc;★v1.6:
- *       原 {@code SessionComponentProvider} SPI 随 ServicesManager 提供方通道
- *       退场删除,消费方迁移 {@code MiniGameApi#registerSessionComponents});</li>
- *   <li>{@code engine.mode/**}——MatchMode(嵌套 Builder/ComponentEntry)、
- *       MatchModeMeta(★v1.13/31 号:嵌套 DefaultTransition 随缺省去向管线
- *       退场出册)、MatchModeProvider(19-D6 行;Builder 即声明语言,7.2 落地);</li>
- *   <li>两级组件基类及其 Specification/Snapshot/Factory——MatchModeComponent/
- *       SessionComponent 家族(<b>不含两 Registry</b>,19-D6「不含 Registry」);</li>
- *   <li>{@code engine.session} 值类型——Handoff(嵌套 Key/Builder)/HandoffView/
- *       EndResult/TransitionIntent/MatchModeSelection/SwitchResult(嵌套三件)/
- *       JoinResult(嵌套两件)/LeaveReason/DissolveReason/SessionId
- *       (D6 清单九件:19-D6/07 §7.2 白名单行)+ 两件<b>签名闭包</b>:HandoffView
- *       ({@code MatchModeInstancePort#handoff} 返回类型,模式组件运行期句柄必需)、
- *       MatchModeConfig({@code MatchModeProvider#build}/{@code
- *       MatchModeComponent.Specification#checkMap}/{@code MatchModeInstancePort#cfg}
- *       等签名必需)——闭包补充同 {@code JoinContext/JoinDecision} 口径,非放宽断言;
- *       <b>SessionSpec 不在册</b>(19-D14:保持内部,recipe→spec 由框架转换、外部不见;
- *       2026-10-25 修复轮移出白名单与快照,纳入反面守卫,见「永不导出」段);</li>
- *   <li>{@code engine.port} 契约——MatchModeInstanceServices/MatchModeInstancePort/
- *       SessionServices/SessionPort/MatchModeInstanceAccess/SessionView/JoinAdmission
- *       (19-D6)+ JoinContext/JoinDecision(Kind)(JoinAdmission#admit 签名闭包必需)
- *       + AttributeBag(实为 engine 根,19-D6 括注;Key/Builder 同册,声明词料容器);</li>
- *   <li>{@code engine.event/**}——SessionEvent 八 record 族、SessionEventPort、
- *       MatchModeInstanceEvent 族(Structural + 七 record)、
- *       MatchModeInstanceEventPort、两内部总线(19-D6「engine.event/**」整包口径);</li>
- *   <li>{@code engine.instance} 只读视图——MatchModeInstanceView/Participant
- *       (<b>闭包补充</b>:component/ 数据件 PhaseSpec 的 {@code Predicate<
- *       MatchModeInstanceView>} 等签名引用——D6 清单的签名闭包修正,非放宽断言,
- *       7.5 施工决策登记);</li>
- *   <li>{@code component/**} 公开数据件与事件类型——EndCondition/GateVerdict/
- *       MatchOutcome(Kind)/EndGateComponent(Spec)/PhaseChanged/PhaseSpec(Kind)/
- *       PhaseComponent(Spec/PhaseCountdown)/Rule/RuleContext/RuleBookComponent(Spec)/
- *       EmptyArenaComponent(Spec)(19-D6 行;组件类与其 Spec 是模式/宿主的声明面);</li>
- *   <li>{@code map/} 读面——MapDefinition(19-D6;★v1.2 registerMap 签名必需,
- *       7.5 决策 4;★v1.8 瘦身后单类在册——Bounds/RegionSet/NamedRegion(RegionType)/
- *       SpawnPoint/InteractPoint 随声明瘦身出册,26 号修正案议题;metadata 词料
- *       容器归 engine 根 {@code AttributeBag},标签读口 = {@code MapDefinition#tags()})。</li>
- * </ul>
- *
- * <p><b>永不导出(白名单反面,显式列出;07 §7.2/19-D6/19-D14;★v1.3 历史口径注见该表)</b>:
- * {@code SessionService(Impl)}、{@code EngineTicker}、{@code WorldPort}、
- * {@code ServiceRegistry} 族、{@code ComponentRegistry} 族、{@code bridge/**}、
- * {@code engine.session.SessionSpec}(recipe→spec 由框架转换,外部不见,19-D14)、
- * 各 Impl(含 {@code MiniGameApiImpl})、两贡献/收录机制件
- * ({@code SessionComponentContributionRegistry})——它们只被断言 ① 的「白名单内
- * 不出现」间接守卫(不出现在任何 MiniGameApi 签名),直改公开面由 review 条款兜底
- * (跨 jar 强制归 8.1/★49)。
- *
- * <p><b>快照纪律(②)</b>:对白名单每类反射其 {@code public declared} 方法与字段,
- * 归一为 {@code "FQCN#名(参数类型):返回类型"} / {@code "FQCN#字段:字段类型"},
- * 与 {@link #BASELINE}(首建快照,TreeSet 排序文本块)<b>全等</b>——删/改即红,
- * 新增 = 追加基线行 + PR 说明(与 ★19 方法集同一运营细则,MiniGameApiSurfaceTest 注)。
- * record 的 {@code equals/hashCode/toString} 与枚举 {@code values/valueOf} 为编译器
- * 生成面,一并入册(消费者可见面)。
+ * <p>白名单逐包清单与出处见 {@link #WHITELIST} 行内注释(07 §7.2/19-D6 口径,
+ * 新增条目须同步注释出处)。永不导出的反面清单:SessionService 族、EngineTicker、
+ * WorldPort、两 Registry 族、bridge 包、SessionSpec(19-D14)、各 Impl——由断言①
+ * 间接守卫,直改公开面归 review 条款(★49)。编译器生成面(equals/hashCode/
+ * toString/values/valueOf)一并入册。
  */
 class ApiSurfaceTest {
 
@@ -145,7 +90,7 @@ class ApiSurfaceTest {
             SessionInfo.class, MatchModeInfo.class, MapInfo.class,
             // ── engine.mode/**(19-D6;★v1.13/31 号:DefaultTransition 出册) ──
             MatchMode.class, MatchMode.Builder.class, MatchMode.ComponentEntry.class,
-            MatchModeMeta.class, MatchModeProvider.class,
+            MatchModeMetadata.class, MatchModeProvider.class,
             // ── 两级组件基类 + Specification/Snapshot/Factory(不含 Registry,19-D6) ──
             MatchModeComponent.class, MatchModeComponent.Specification.class,
             MatchModeComponent.Specification.Snapshot.class, MatchModeComponent.Factory.class,
@@ -260,26 +205,11 @@ class ApiSurfaceTest {
 
     // ── 断言 ②:白名单公开签名快照只增不改(★44 后半;首建基线 2026-10-25) ──
 
-    /** 首建快照文本(7.5,2026-10-25;★v1.6 更新:增 MiniGameApi 四行、删 SessionComponentProvider 两行;
-     *  ★v1.7 更新:删能力标签两法 + MatchModeInfo/MatchModeMeta 的所需能力分量 +
-     *  SessionComponent$Specification$Snapshot#capabilities 与 Specification#capabilities 共 6 行
-     *  (25 号修正案:标签机制退场,快照合法重录);
-     *  ★v1.8 更新(26 号修正案议题,快照合法重录):MapDefinition 瘦身为
-     *  worldDirectoryPath/resetStrategy/metadata 三分量行 + id/TAGS/tags 读口行,
-     *  Bounds/RegionSet/NamedRegion(RegionType)/SpawnPoint/InteractPoint 出册,
-     *  MapInfo 收缩为 id/tags/resetStrategy;旧属性袋成员行与各端口 attrs()/attr()
-     *  行随退场删除,engine 根 AttributeBag(Key/Builder 同册)= 声明词料容器;
-     *  map 包旧标签提供者类型及其 #tags() 读口出册;
-     *  由 {@code snapshotLines()} 同算法生成后粘贴;须先于 BASELINE 声明;
-     *  ★v1.12 更新(30 号修正案,快照合法重录):删 JoinDecision$Kind 的观战位常量一行
-     *  (裁决词汇收缩为 ADMIT/REJECT 二值,ADR-0018);
-     *  ★v1.13 更新(31 号修正案,快照合法重录):缺省去向管线退场——删
-     *  MatchModeInfo#defaultTransition、MatchModeMeta#defaultTransition 与
-     *  MatchModeMeta$DefaultTransition 的 FALLBACK/ROTATION/STAY/valueOf/values
-     *  共 7 行(经用户裁决不设双轨过渡期,API_VERSION 7 → 8)。 */
+    /** 首建快照文本(2026-10-25);各版本快照重录沿革见 24/25/26/30/31/32 号修正案;
+     *  本次 = 删除 MatchModeMeta、元数据改 AttributeBag 承载(基线行同步重录)。
+     *  由 {@code snapshotLines()} 同算法生成后粘贴;须先于 BASELINE 声明。 */
     private static final String BASELINE_TEXT = """
 com.hydrokarbs.api.EventSubscription#close():void
-com.hydrokarbs.api.MiniGameApi#API_VERSION:int
 com.hydrokarbs.api.MiniGameApi#createSession(com.hydrokarbs.api.SessionRecipe):com.hydrokarbs.api.view.SessionInfo
 com.hydrokarbs.api.MiniGameApi#joinSession(java.lang.String,java.util.UUID):com.hydrokarbs.engine.session.JoinResult
 com.hydrokarbs.api.MiniGameApi#leaveSession(java.util.UUID,com.hydrokarbs.engine.session.LeaveReason):void
@@ -647,7 +577,7 @@ com.hydrokarbs.engine.mode.MatchMode#displayName():net.kyori.adventure.text.Comp
 com.hydrokarbs.engine.mode.MatchMode#icon():org.bukkit.Material
 com.hydrokarbs.engine.mode.MatchMode#id():java.lang.String
 com.hydrokarbs.engine.mode.MatchMode#mapTags():java.util.Set
-com.hydrokarbs.engine.mode.MatchMode#meta():com.hydrokarbs.engine.mode.MatchModeMeta
+com.hydrokarbs.engine.mode.MatchMode#meta():com.hydrokarbs.engine.AttributeBag
 com.hydrokarbs.engine.mode.MatchMode#verifyDependencies():void
 com.hydrokarbs.engine.mode.MatchMode$Builder#addComponent(java.lang.String,com.hydrokarbs.engine.component.MatchModeComponent$Specification):com.hydrokarbs.engine.mode.MatchMode$Builder
 com.hydrokarbs.engine.mode.MatchMode$Builder#build():com.hydrokarbs.engine.mode.MatchMode
@@ -655,7 +585,7 @@ com.hydrokarbs.engine.mode.MatchMode$Builder#description(java.util.List):com.hyd
 com.hydrokarbs.engine.mode.MatchMode$Builder#displayName(net.kyori.adventure.text.Component):com.hydrokarbs.engine.mode.MatchMode$Builder
 com.hydrokarbs.engine.mode.MatchMode$Builder#icon(org.bukkit.Material):com.hydrokarbs.engine.mode.MatchMode$Builder
 com.hydrokarbs.engine.mode.MatchMode$Builder#mapTags(java.util.Set):com.hydrokarbs.engine.mode.MatchMode$Builder
-com.hydrokarbs.engine.mode.MatchMode$Builder#meta(com.hydrokarbs.engine.mode.MatchModeMeta):com.hydrokarbs.engine.mode.MatchMode$Builder
+com.hydrokarbs.engine.mode.MatchMode$Builder#metadata(com.hydrokarbs.engine.AttributeBag):com.hydrokarbs.engine.mode.MatchMode$Builder
 com.hydrokarbs.engine.mode.MatchMode$ComponentEntry#descriptorType():java.lang.Class
 com.hydrokarbs.engine.mode.MatchMode$ComponentEntry#equals(java.lang.Object):boolean
 com.hydrokarbs.engine.mode.MatchMode$ComponentEntry#factory():com.hydrokarbs.engine.component.MatchModeComponent$Factory
@@ -665,15 +595,17 @@ com.hydrokarbs.engine.mode.MatchMode$ComponentEntry#optionalTypes():java.util.Li
 com.hydrokarbs.engine.mode.MatchMode$ComponentEntry#providedType():java.lang.Class
 com.hydrokarbs.engine.mode.MatchMode$ComponentEntry#requiredTypes():java.util.List
 com.hydrokarbs.engine.mode.MatchMode$ComponentEntry#toString():java.lang.String
-com.hydrokarbs.engine.mode.MatchModeMeta#equals(java.lang.Object):boolean
-com.hydrokarbs.engine.mode.MatchModeMeta#hashCode():int
-com.hydrokarbs.engine.mode.MatchModeMeta#maxParticipants():int
-com.hydrokarbs.engine.mode.MatchModeMeta#minParticipants():int
-com.hydrokarbs.engine.mode.MatchModeMeta#recordsHistory():boolean
-com.hydrokarbs.engine.mode.MatchModeMeta#toString():java.lang.String
+com.hydrokarbs.engine.mode.MatchModeMetadata#DEFAULT_MAX:int
+com.hydrokarbs.engine.mode.MatchModeMetadata#DEFAULT_MIN:int
+com.hydrokarbs.engine.mode.MatchModeMetadata#MAX_PARTICIPANTS:com.hydrokarbs.engine.AttributeBag$Key
+com.hydrokarbs.engine.mode.MatchModeMetadata#MIN_PARTICIPANTS:com.hydrokarbs.engine.AttributeBag$Key
+com.hydrokarbs.engine.mode.MatchModeMetadata#RECORDS_HISTORY:com.hydrokarbs.engine.AttributeBag$Key
+com.hydrokarbs.engine.mode.MatchModeMetadata#addTo(com.hydrokarbs.engine.AttributeBag$Builder,boolean,int,int):com.hydrokarbs.engine.AttributeBag$Builder
+com.hydrokarbs.engine.mode.MatchModeMetadata#maxParticipants(com.hydrokarbs.engine.AttributeBag):int
+com.hydrokarbs.engine.mode.MatchModeMetadata#minParticipants(com.hydrokarbs.engine.AttributeBag):int
+com.hydrokarbs.engine.mode.MatchModeMetadata#recordsHistory(com.hydrokarbs.engine.AttributeBag):boolean
 com.hydrokarbs.engine.mode.MatchModeProvider#build(com.hydrokarbs.engine.session.MatchModeConfig):com.hydrokarbs.engine.mode.MatchMode
 com.hydrokarbs.engine.mode.MatchModeProvider#id():java.lang.String
-com.hydrokarbs.engine.mode.MatchModeProvider#requiredApiVersion():int
 com.hydrokarbs.engine.port.JoinAdmission#admit(java.util.UUID,com.hydrokarbs.engine.port.JoinContext):com.hydrokarbs.engine.port.JoinDecision
 com.hydrokarbs.engine.port.JoinContext#equals(java.lang.Object):boolean
 com.hydrokarbs.engine.port.JoinContext#hashCode():int

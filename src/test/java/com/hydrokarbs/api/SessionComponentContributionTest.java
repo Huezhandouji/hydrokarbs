@@ -33,20 +33,16 @@ import com.hydrokarbs.testkit.StubSessionService;
 import com.hydrokarbs.testkit.TestPlugins;
 
 /**
- * 会话组件贡献端到端(★51~★53;D14 两通道;7.5 施工文档步骤 5/6,离线):
+ * 会话组件贡献端到端(★51~★53;D14 两通道,离线):
  * <ul>
- *   <li>★51(通道一·全局):贡献经 {@code api.registerSessionComponents} 显式注册后
- *       新会话合并(合并序 = 注册序 → recipe.extra);坏贡献干跑校验失败<b>响亮上抛</b>
- *       给调用方(★v1.6:显式注册可捕获,原事件通道「SEVERE 拒收录、会话照常」口径
- *       随通道退场);摘除(disable 兜底同款路径)后新会话不再合并;</li>
+ *   <li>★51(通道一·全局):显式注册后新会话合并(合并序 = 注册序 → recipe.extra);
+ *       坏贡献干跑校验失败响亮上抛给调用方;摘除后新会话不再合并;</li>
  *   <li>★52(通道二·单次):recipe.extra 进表、随 dissolve 全灭;查重/缺依赖
  *       createSession 响亮拒绝(引擎装配闸,不写第二套校验);</li>
- *   <li>★53(隔离):贡献组件运行期抛异常仅自身 quarantine、会话不解散(★30 扩展)。</li>
+ *   <li>★53(隔离):贡献组件运行期抛异常仅自身隔离、会话不解散(★30 扩展)。</li>
  * </ul>
- *
- * <p>合并序断言用 {@link StubSessionService} 记录 spec(薄委托的输入面);
- * 生命周期/隔离/响亮拒用真会话服务(装配闸与 D9 隔离的真实管线)。
- * {@code Plugin} 以动态代理占位(身份键;{@link TestPlugins} 先例)。零 Bukkit 静态调用。
+ * <p>合并序断言用 {@link StubSessionService} 记录 spec;生命周期/隔离/响亮拒用真会话服务。
+ * {@code Plugin} 以动态代理占位;零 Bukkit 静态调用。
  */
 class SessionComponentContributionTest {
 

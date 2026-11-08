@@ -12,27 +12,14 @@ import com.hydrokarbs.engine.port.SessionView;
 import com.hydrokarbs.map.MapDefinition;
 
 /**
- * 阶段状态机组件:持有阶段表数据,推进/转场/计时(施工计划 1.5;06-共享组件 §6.1-#4)。
+ * 阶段状态机组件:持有阶段表数据,推进/转场/计时(06-共享组件 §6.1-#4)。
  *
- * <p>★ 阶段状态唯一写者 = 本组件:当前索引与进入时刻全在组件内,
- * 其他组件经读口({@link #currentId}/{@link #currentExpired}/{@link #countdown})
- * 或订阅 {@link PhaseChanged} 消费——这是仅有的两条合法路径(14-陷阱清单 §14.24)。
- * 引擎对「阶段」零认知;不要阶段推进的模式不挂本组件(要就挂、不要不挂)。
+ * <p>★ 阶段状态唯一写者 = 本组件:其他组件经读口({@link #currentId}/
+ * {@link #currentExpired}/{@link #countdown})或订阅 {@link PhaseChanged} 消费,
+ * 这是仅有的两条合法路径(14-陷阱清单 §14.24)。组件不按具体阶段 id 分支,
+ * 阶段差异只在表里;引擎对「阶段」零认知,不要阶段推进的模式不挂本组件。
  *
- * <p>推进算法(数据驱动,组件内不按具体阶段 id 分支——阶段差异只在表里):
- * <ul>
- *   <li>{@code start()}:进入首阶段并发布 {@link PhaseChanged}(fromPhaseId = null);</li>
- *   <li>{@code update()}:当前条目等待型则求值谓词、计时型则看停留时长,走完即转下一阶段,
- *       每次转场发布 {@link PhaseChanged};末阶段走完后按 {@code loopOnFinish}
- *       循环回首阶段或原地停留(停留语义供常驻型模式使用);</li>
- *   <li>{@link #jump}:显式跳转(声明式规则的 then 跨组件驱动阶段推进的口),
- *       未知 id 响亮抛 {@link IllegalArgumentException}。</li>
- * </ul>
- *
- * <p>类注:实例只读视图的来源——{@link MatchModeInstanceView} 无服务集直通口
- * (「组件拿 view」的通道在前置子阶段未落接口),本组件以嵌套适配器把视图面
- * 委托到 {@code svc()} 能取到的读口;{@code session()} 已随 2.6 接通真只读视图
- * (经 {@code svc().self().session()} 委托;阶段1 已知问题 4 消除,记 deviations)。
+ * <p>实例只读视图以嵌套适配器委托到 {@code svc()} 读口(无服务集直通口)。
  */
 public final class PhaseComponent extends MatchModeComponent {
 
@@ -169,7 +156,7 @@ public final class PhaseComponent extends MatchModeComponent {
         return Math.max(0, svc().self().tick() - enteredAtTick);
     }
 
-    /** 实例只读视图(嵌套适配器:委托服务集读口;session() 见类注)。 */
+    /** 实例只读视图(嵌套适配器,委托服务集读口)。 */
     private MatchModeInstanceView view() {
         return view;
     }
@@ -199,7 +186,7 @@ public final class PhaseComponent extends MatchModeComponent {
 
         @Override
         public SessionView session() {
-            return svc().self().session();   // 2.6 接通:经服务集自面取所属会话的只读视图
+            return svc().self().session();   // 经服务集自面取所属会话的只读视图
         }
     }
 

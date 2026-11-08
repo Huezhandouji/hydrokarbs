@@ -6,12 +6,10 @@ import java.util.Optional;
 import com.hydrokarbs.engine.component.SessionComponent;
 
 /**
- * 会话内组件查找端口:按类型 / 按 id,含 getAll(★v4;02-核心概念 §2.5.1;
- * 形状对齐实例级 {@link ComponentLookupPort})。
+ * 会话内组件查找端口:按类型 / 按 id(02-核心概念 §2.5.1)。
  *
- * <p>会话组件协作的唯一取物口(「基类不认识子类」纪律的另一半:要协作就按类型取)。
- * 实现体是 {@code SessionComponentRegistry}(声明序快照遍历)——同一会话内恒返回
- * 同一实例(每会话一份,★27);跨会话互不可见。
+ * <p>会话组件协作的唯一取物口(要协作就按类型取);实现是每会话一份的
+ * {@code SessionComponentRegistry}(声明序),同一会话内恒返回同一实例,跨会话互不可见。
  */
 public interface SessionComponentLookupPort {
 

@@ -67,7 +67,7 @@ class SwitchStormGuardTest {
         assertEquals(SwitchResult.Reason.REJECTED_BY_TARGET_MODE, rejected.code());
         assertTrue(rejected.detail().contains("驻留不足") && rejected.detail().contains("tick"),
                 "detail 注明剩余 tick: " + rejected.detail());
-        assertTrue(harness.logLines.stream().anyMatch(line -> line.startsWith("WARNING") && line.contains("驻留不足")),
+        assertTrue(harness.logLines.stream().anyMatch(line -> line.startsWith("WARNING") && line.contains("min dwell")),
                 "拒绝时记 WARN");
         assertEquals(SessionState.RUNNING, session.state(), "未发起切换,状态不变");
     }
@@ -176,7 +176,7 @@ class SwitchStormGuardTest {
         session.runPendingSwitch();                   // 未经节拍器直调驱动钩子
         assertEquals(SessionState.ENDING, session.state(), "栈闸门拒绝发起,状态保持 ENDING");
         assertTrue(session.currentInstance().isPresent(), "旧实例未动");
-        assertTrue(harness.logLines.stream().anyMatch(line -> line.contains("未经节拍器驱动")),
+        assertTrue(harness.logLines.stream().anyMatch(line -> line.contains("outside ticker")),
                 "栈闸门命中记 WARN");
 
         harness.ticker.tickAll();                     // 经节拍器驱动:正常发起

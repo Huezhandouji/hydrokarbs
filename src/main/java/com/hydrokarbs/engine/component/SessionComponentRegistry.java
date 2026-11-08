@@ -19,38 +19,18 @@ import com.hydrokarbs.engine.port.SessionServices;
 import com.hydrokarbs.engine.session.SessionId;
 
 /**
- * 会话组件注册表:会话版 {@link ComponentRegistry}(★v4;02-核心概念 §2.5.1;
- * 03-会话与模式切换 §3.8;施工计划 2.6 步骤 5)。
+ * 会话组件注册表:会话版 {@link ComponentRegistry}(§2.5.1;§3.8)。
  *
- * <p><b>每会话一份的机械保证</b>(★27):注册表挂在 {@code Session} 上
- * (<b>不是进程级静态</b>)——arena 拓扑下 N 个会话并发跑同一模板互不串台;
- * 共享的只能是不可变声明(Spec/Snapshot/SPEC 常量),有状态实例永不跨会话共享。
- * 注册表<b>不持有组件状态,只持描述符与实例引用</b>(§2.8-决断三扩展)。
+ * <p><b>每会话一份</b>(★27):挂在 {@code Session} 上,<b>不是进程级静态</b>——
+ * arena 下并发会话互不串台;共享的只能是不可变声明(Spec/Snapshot),有状态实例
+ * 永不跨会话;注册表不持有组件状态,只持描述符与实例引用。
  *
- * <p><b>职责清单</b>:
- * <ul>
- *   <li>{@link #bind}:装配期登记快照(id 去重,id 跨类型同一命名空间);</li>
- *   <li>{@link #verifyDependencies()}:装配期依赖校验(算法逐行照 02 §2.6 六行,
- *       类型换成会话级:自己不算自己的提供者、环不检查、自环算缺、
- *       缺必需依赖抛 {@link ComponentDependencyException} 点名);</li>
- *   <li>{@link #createAll} / {@link #awakeAll} / {@link #startAll}:按<b>声明序</b>
- *       (装配序 = 声明序 = 派发序,14.30);装配期抛异常上抛 →
- *       <b>会话创建失败</b>(响亮,L0 SEVERE;与运行期隔离语义不可混淆);</li>
- *   <li>{@link #tickAll} / {@link #dispatchEvent}:逐组件 try/catch → D9 隔离
- *       (记日志 → safeStop + 打标跳过其派发 → 发 {@code SessionComponentQuarantined}
- *       → <b>会话不解散</b>,其余组件照常);</li>
- *   <li>{@link #stopAll}:<b>逆序</b> stop(逐个 safeStop,异常不中断;已隔离组件
- *       已停用,不重复停)——<b>stop 由框架无条件调用,无单例豁免条款</b>;</li>
- *   <li>{@link #reclaimRegisteredResources()}:登记资源(订阅/延时任务/显示)幂等统一回收
- *       (与实例级同法,§1.3 步 4);</li>
- *   <li>查找口({@link #get}/{@link #getAll}/{@link #byId})实现
- *       {@link SessionComponentLookupPort},即 svc 服务集的 components 成员。</li>
- * </ul>
- *
- * <p>★ 待裁决登记(⑤,D3 落盘注):D3 原文「bind 幂等」与「同会话重复绑定同 id 抛
- * {@code IllegalStateException}」语义相抵——本版对照 1.3 实例级 {@link ComponentRegistry}
- * 的「组件重复注册(编程错误)抛」口径,<b>落地为重复即抛</b>;候选
- * 「同 id 同快照幂等去重、异快照抛」待上游裁决,未静默决定。
+ * <p>职责:bind 登记(id 去重)→ verifyDependencies(缺必需依赖抛)→ createAll/
+ * awakeAll/startAll 按<b>声明序</b>(装配序 = 声明序 = 派发序,14.30;装配期抛 →
+ * <b>会话创建失败</b>,与运行期隔离不可混淆)→ tickAll/dispatchEvent 逐组件
+ * try/catch → D9 隔离(<b>会话不解散</b>);stopAll <b>逆序</b>无条件(无单例豁免);
+ * 登记资源幂等统一回收;查找口({@link #get}/{@link #getAll}/{@link #byId})实现
+ * {@link SessionComponentLookupPort}(svc 服务集的 components 成员)。
  */
 public final class SessionComponentRegistry implements SessionComponentLookupPort {
 
@@ -102,11 +82,9 @@ public final class SessionComponentRegistry implements SessionComponentLookupPor
     }
 
     /**
-     * 装配期依赖校验(算法逐行照 02 §2.6 六行,类型换会话级):
-     * A 的必需类型 R 被满足 ⟺ 存在另一绑定项 B(id ≠ A)使
-     * {@code R.isAssignableFrom(B.providedType())};<b>自己不算自己的提供者</b>
-     * (自环仍算缺,硬失败);可选依赖缺失不报错;<b>环不检查</b>(允许环形依赖,
-     * awake 顺序 = 声明序,环内「谁先醒」未定义——不得依赖)。
+     * 装配期依赖校验(算法照 §2.6):A 的必需类型 R 被满足 ⟺ 存在另一绑定项 B
+     * (id ≠ A)使 {@code R.isAssignableFrom(B.providedType())}——<b>自己不算自己的
+     * 提供者</b>(自环算缺);可选缺失不报错;<b>环不检查</b>(环内「谁先醒」未定义,不得依赖)。
      * 缺必需依赖抛 {@link ComponentDependencyException} 点名(会话 id/组件 id/缺的类型)。
      */
     public void verifyDependencies() {
@@ -213,7 +191,7 @@ public final class SessionComponentRegistry implements SessionComponentLookupPor
         }
         quarantined.add(component);
         String reason = cause.getMessage() != null ? cause.getMessage() : cause.toString();
-        LOG.log(Level.SEVERE, "会话组件故障隔离(会话 {0}, 组件 {1}, 钩子 {2}, 原因 {3})——组件停用,会话不解散",
+        LOG.log(Level.SEVERE, "Session component quarantined (session {0}, component {1}, hook {2}): {3}",
                 new Object[] { sessionId.value(), component.id(), hook, reason });
         safeStop(component);
         bus.publish(SessionEvent.SessionComponentQuarantined.of(sessionId, component.id(), reason));
@@ -236,8 +214,8 @@ public final class SessionComponentRegistry implements SessionComponentLookupPor
         try {
             component.stop();
         } catch (Throwable t) {
-            LOG.log(Level.WARNING, "会话组件 stop 异常(已隔离,继续逆序): " + component.id()
-                    + "(会话 " + sessionId.value() + ")", t);
+            LOG.log(Level.WARNING, "Session component stop threw (isolated, continuing): " + component.id()
+                    + " (session " + sessionId.value() + ")", t);
         }
     }
 
@@ -259,7 +237,7 @@ public final class SessionComponentRegistry implements SessionComponentLookupPor
             try {
                 handle.close();
             } catch (Throwable t) {
-                LOG.log(Level.WARNING, "会话组件登记资源回收失败(忽略并继续)", t);
+                LOG.log(Level.WARNING, "Session component resource reclaim failed (ignored)", t);
             }
         }
     }

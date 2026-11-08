@@ -8,30 +8,17 @@ import com.hydrokarbs.engine.port.SessionServices;
 import com.hydrokarbs.engine.session.DissolveReason;
 
 /**
- * 空场解散策略:会话连续无成员达 {@code after} 即请求解散(★v4 第一波迁移;
- * 06-共享组件 §6.4;变更指示 D11;03-会话与模式切换 §3.1「空场策略」行)。
+ * 空场解散策略:会话连续无成员达 {@code after} 即请求解散
+ * (06-共享组件 §6.4;03-会话与模式切换 §3.1)。会话策略可插拔:
+ * 加/换行为不改 {@code SessionService};连接追踪与宽限 sweep 仍在内核。
  *
- * <p>会话的*策略*可插拔:加/换行为不改 {@code SessionService};连接追踪与宽限
- * sweep 仍在内核。
+ * <p>到点 {@code requestDissolve(DissolveReason.EMPTY)} 幂等、恰一次;成员回归
+ * 即重置计时;空场判定按在册成员为零(名册含宽限期成员);{@code stop} 与
+ * {@code start} 严格对称(订阅句柄随框架回收)。不挂本组件 = 永不解散,
+ * 隔离停用同样退回永不解散并留日志;由宿主组装时挂载。
  *
- * <p><b>行为</b>(§6.4 行为栏逐行):{@code start} 订阅 {@code MemberJoined}/
- * {@code MemberLeft};{@code update} 维护空场起点(无成员 → 起算;有成员回归 →
- * <b>重置计时</b>);到点 {@code svc().self().requestDissolve(DissolveReason.EMPTY)}
- * (<b>幂等,恰一次</b>);{@code stop} 与 {@code start} 严格对称——订阅句柄随框架
- * 回收(登记在组件名下),不手写 cancel。
- *
- * <p><b>「不挂 = 默认」</b>:不挂本组件 = <b>永不解散</b>(镜像
- * 入场控制组件的「不挂 = 默认全接纳」);隔离停用本组件时行为同样退回「永不解散」
- * 并留日志(D9)。装配条件:由<b>宿主组装 {@code SessionSpec.sessionComponents}
- * 时自行挂载</b>(时长直接给 {@link Spec} 的 {@code after});
- * 组件机制零改动(★31 原样)。
- *
- * <p><b>计时量纲</b>(★ 待裁决③,已按最小自洽口径落地并在本注释注明):
- * {@code after} 以 {@link Duration} 声明,构造时按<b>标准节拍 20 tps(50ms/tick)
- * 折算为 tick 数</b>——与最短驻留 {@code min-dwell-ticks}、{@code later(delayTicks)}
- * 同一 tick 量纲;空场判定按「在册成员为零」(名册含宽限期成员——宽限保护不失效,
- * 与原内核骨架同口径)。设计案未钉死折算口径(§3.5/§3.8 只钉「同一量纲来源」),
- * 本版取 50ms/tick 标称折算,偏离该口径的裁决待上游回填。
+ * <p>{@code after} 以 {@link Duration} 声明,按标准节拍 20 tps(50ms/tick)折算
+ * 为 tick 数(与最短驻留同一量纲);设计案未钉死折算口径,本版自定,待上游回填。
  */
 public final class EmptyArenaComponent extends SessionComponent {
 

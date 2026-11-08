@@ -14,13 +14,13 @@ import java.util.logging.Logger;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 
+import com.hydrokarbs.engine.AttributeBag;
 import com.hydrokarbs.engine.component.ComponentRegistry;
 import com.hydrokarbs.engine.component.MatchModeComponent;
 import com.hydrokarbs.engine.event.MatchModeInstanceEvent;
 import com.hydrokarbs.engine.event.MatchModeInstanceEventBus;
 import com.hydrokarbs.engine.event.MatchModeInstanceEventPort;
 import com.hydrokarbs.engine.mode.MatchMode;
-import com.hydrokarbs.engine.mode.MatchModeMeta;
 import com.hydrokarbs.engine.port.EngineServices;
 import com.hydrokarbs.engine.port.JoinAdmission;
 import com.hydrokarbs.engine.port.JoinContext;
@@ -42,22 +42,17 @@ import com.hydrokarbs.engine.session.TransitionIntent;
 import com.hydrokarbs.map.MapDefinition;
 
 /**
- * 一次模式运行的容器(12-代码骨架 §12.2)。
- *
- * <p>两相纪律(「构造器只做不可见的事」):
+ * 一次模式运行的容器(§12.2)。两相纪律「构造器只做不可见的事」:
  * <ul>
- *   <li>构造器:先建 svc 服务集(self/components/modeInfo 三个实现体为本类内部类,
- *       捕获容器自身——解决「svc 先于组件存在」的次序问题),再按模式声明序
- *       逐条造组件并登记(构造点唯一),组件的事件钩子装配期挂总线——
- *       构造失败零玩家痕迹(这正是阶段 2 切换回退判据的结构前提,§3.2-B 注);</li>
+ *   <li>构造器:先建 svc 服务集(self/components/modeInfo 为内部类,解决
+ *       「svc 先于组件存在」的次序),再按声明序造组件并登记(构造点唯一),
+ *       事件钩子装配期挂总线——构造失败零玩家痕迹;</li>
  *   <li>{@link #awakeAll()} / {@link #startAll()}:显式二段,玩家可见副作用
  *       最早发生在 startAll 且至多一次。</li>
  * </ul>
  *
- * <p>★ 不持有玩法状态,也不持有组件长期引用——装配在构造器用局部变量完成后,
- * 一切按 id/类型现取(02-核心概念 §2.8-决断三)。
- * 唯一对外职责:装配 / 派发(声明序)/ 供端口 / 回收登记资源;
- * {@link #tick()} 只派发、不解释——方法体内不允许出现第二类逻辑(14-陷阱清单 §14.24)。
+ * <p>不持有玩法状态与组件长期引用,装配后一切按 id/类型现取(§2.8-决断三);
+ * 职责仅装配/派发(声明序)/供端口/回收登记资源;{@link #tick()} 只派发、不解释(§14.24)。
  */
 public final class MatchModeInstance implements AutoCloseable {
 
@@ -107,14 +102,13 @@ public final class MatchModeInstance implements AutoCloseable {
             MatchModeComponent created = entry.getValue().factory().create(entry.getKey(), svc);
             components.register(created, entry.getValue());
         }
-        // 组件的事件钩子装配期挂总线(§2.4 onEvent javadoc:订阅发生在构造/awake 期,
-        // 随 close 的 bus.clear() 自动回收)。
+        // 组件的事件钩子装配期挂总线;订阅随 close 的 bus.clear() 自动回收。
         for (MatchModeComponent component : components.inDeclarationOrder()) {
             bus.subscribe(MatchModeInstanceEvent.class, component::onEvent);
         }
     }
 
-    // ── 二段生效(调用方:会话服务的切换执行段 B4;2.3 起跨包调用,提 public) ────
+    // ── 二段生效(调用方:会话服务的切换执行段 B4)────────────────
 
     /** 装配段:声明序逐组件 awake——只解析依赖,玩家不可见。 */
     public void awakeAll() {
@@ -122,12 +116,10 @@ public final class MatchModeInstance implements AutoCloseable {
     }
 
     /**
-     * 生效段:名册原地位移(经入场裁决触发点①)→ 声明序逐组件 start → 发布实例启动事件。
-     *
-     * <p>★v3.2 触发点①(03-会话与模式切换 §3.2.1):成员成为参赛者之前逐人经
-     * {@link JoinAdmission} 裁决——按组件声明序取第一个实现者,无实现者默认 ADMIT;
-     * REJECT 的成员留在会话名册、不进本实例(成员仍有所属会话,只是本局不上场);
-     * ADMIT 成为参赛者;观战安置非引擎词汇,归组件层。
+     * 生效段:名册原地位移(经入场裁决触发点①,§3.2.1)→ 声明序逐组件 start →
+     * 发布实例启动事件。逐人经 {@link JoinAdmission} 裁决:按声明序取第一个实现者,
+     * 无实现者默认 ADMIT;REJECT 的成员留在会话名册、不进本实例(本局不上场);
+     * 观战安置非引擎词汇,归组件层。
      */
     public void startAll() {
         JoinAdmission gate = joinGate();
@@ -145,7 +137,7 @@ public final class MatchModeInstance implements AutoCloseable {
         bus.publish(new MatchModeInstanceEvent.MatchModeInstanceStarted(clock.tick(), clock.occurredAtMillis()));
     }
 
-    // ── 切换配合口(2.3:会话服务切换阶段 B1/B4 与 join 触发点②的落点) ────────
+    // ── 切换配合口(会话服务切换阶段 B1/B4 与 join 触发点②的落点)────────
 
     /**
      * 交接出局(切换阶段 B1):按声明序逐组件 {@code onHandoff(Builder)}——
@@ -187,7 +179,7 @@ public final class MatchModeInstance implements AutoCloseable {
         return fresh;
     }
 
-    /** 本实例运行的模式 id(会话侧事件载荷与回退诊断用;2.3 增)。 */
+    /** 本实例运行的模式 id(会话侧事件载荷与回退诊断用)。 */
     public String modeId() {
         return mode.id();
     }
@@ -235,7 +227,7 @@ public final class MatchModeInstance implements AutoCloseable {
             return;
         }
         quarantined = true;
-        LOG.log(Level.SEVERE, "实例故障隔离: " + id.value(), t);
+        LOG.log(Level.SEVERE, "Instance quarantined: " + id.value(), t);
         requestEnd(EndResult.nowhere());
     }
 
@@ -243,7 +235,7 @@ public final class MatchModeInstance implements AutoCloseable {
         try {
             component.stop();
         } catch (Throwable t) {
-            LOG.log(Level.WARNING, "组件 stop 异常(已隔离,继续逆序): " + component.id(), t);
+            LOG.log(Level.WARNING, "Component stop threw (isolated, continuing): " + component.id(), t);
         }
     }
 
@@ -282,9 +274,9 @@ public final class MatchModeInstance implements AutoCloseable {
     }
 
     /**
-     * 会话侧只读实例面(★v4-D5):{@code SessionPort#currentInstance()} 的元素——
-     * 会话级组件经它读当前实例运行数据。每次调用<b>现取</b>(调用方不得缓存引用
-     * 越过切换,14.27);无写口(只读是架构纪律 + review 条款,14.29)。
+     * 会话侧只读实例面:{@code SessionPort#currentInstance()} 的元素,
+     * 会话级组件经它读当前实例运行数据。每次调用<b>现取</b>,不得缓存引用
+     * 越过切换(§14.27);无写口(架构纪律,§14.29)。
      */
     public MatchModeInstanceAccess access() {
         return new AccessView();
@@ -300,7 +292,7 @@ public final class MatchModeInstance implements AutoCloseable {
         return handoff;
     }
 
-    /** 本实例的参赛者快照(2.3 增:名册位移链路断言与会话侧只读消费;不可变列表)。 */
+    /** 本实例的参赛者快照(名册位移链路断言与会话侧只读消费;不可变列表)。 */
     public List<Participant> participants() {
         return List.copyOf(participants.values());
     }
@@ -365,9 +357,9 @@ public final class MatchModeInstance implements AutoCloseable {
 
         @Override
         public void switchTo(MatchModeSelection target, Handoff payload) {
-            // 2.3 接线:切换请求走「结束 + 显式去向」——与结束判定组件的主动声明同一通道
-            // (§3.2 三个触发入口殊途同归到会话切换一个方法;请求只置位,处置由节拍器
-            // 下一 tick 驱动,切换永远不发生在事件派发栈内,§3.1/§16.4-三律①)。
+            // 切换请求走「结束 + 显式去向」,与结束判定组件的主动声明同一通道
+            // (§3.2 三入口归一会话切换):请求只置位,处置由节拍器下一 tick 驱动,
+            // 切换永远不发生在事件派发栈内(§3.1/§16.4-三律①)。
             requestEnd(new EndResult(Optional.of(new TransitionIntent(target, payload))));
         }
 
@@ -380,15 +372,14 @@ public final class MatchModeInstance implements AutoCloseable {
 
         @Override
         public SessionView session() {
-            // ★v4-D5:实例侧只读会话视图(同一方法双满足 MatchModeInstancePort#session()
-            // 与本只读读口;原裸 Session 返回在 2.6 收窄,阶段1 已知问题 4 消除)
+            // 实例侧只读会话视图:同一方法双满足 MatchModeInstancePort#session() 与本只读读口
             return session.view();
         }
     }
 
     /**
-     * 会话侧只读实例面(★v4-D5)的实现体:委托容器自身字段与组件注册表;
-     * 只读约定(无写口)是架构纪律 + review 条款(14.29)。
+     * 会话侧只读实例面的实现体:委托容器自身字段与组件注册表;
+     * 无写口(架构纪律,§14.29)。
      */
     private final class AccessView implements MatchModeInstanceAccess {
 
@@ -457,7 +448,7 @@ public final class MatchModeInstance implements AutoCloseable {
         }
 
         @Override
-        public MatchModeMeta meta() {
+        public AttributeBag meta() {
             return mode.meta();
         }
     }

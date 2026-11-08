@@ -88,11 +88,9 @@ public final class MapTestKit {
      * 落盘 {@code <parent>/<id>} 世界目录并以 {@code provider} 身份注册
      * (id = 声明目录名,路径派生;返回注册的同一声明实例)。
      *
-     * @param registry 目标目录(无参构造实例)
-     * @param parent   声明目录父目录(落盘挂点;@TempDir 下目录或自理临时目录)
-     * @param provider 提供方身份键(测试内身份比较用,任意对象)
-     * @param id       地图 id(即目录名,路径派生)
-     * @param tags     标签集(装入 {@link MapDefinition#TAGS} 词料键;空集合法)
+     * @param registry 目标目录;parent 落盘父目录(@TempDir 或自理临时目录);
+     *                  provider 身份键(任意对象);id 地图 id(即目录名);
+     *                  tags 标签集({@link MapDefinition#TAGS} 词料键,空集合法)
      */
     public static MapDefinition registered(MapRegistry registry, Object provider, Path parent,
                                            String id, Set<String> tags) {

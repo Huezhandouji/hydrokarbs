@@ -2,7 +2,6 @@ package com.example.their;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
@@ -12,37 +11,17 @@ import com.hydrokarbs.engine.component.SessionComponent;
 import com.hydrokarbs.engine.port.SessionServices;
 
 /**
- * 消费样例守卫用例(7.5 施工文档步骤 10 的测试源集载体;★46/★51 的消费方侧):
+ * 消费样例守卫用例(★51 消费方侧):
  * <ul>
- *   <li><b>低版本拒载用例(★46/14.36)</b>:{@code onEnable} 首行版本判定的真值表——
- *       api 缺席/版本低于要求 → 拒载,恰好满足 → 放行(拒载路径本体
- *       {@code setEnabled(false)} 需活服,由 runServer 冒烟覆盖,不在本子阶段);</li>
- *   <li><b>坏贡献用例(★51 的消费方侧形状;★v1.6 显式注册口径)</b>:声明一个贡献了
- *       「无人供给依赖」组件的描述符——它在框架侧收录闸干跑校验会<b>响亮抛</b>给
- *       调用方(onEnable 注册失败 = 拒载信号,行为本体由框架侧
- *       SessionComponentContributionTest 承载,样例只示范形状);
- *       同时断言合法贡献声明(非空贡献表)。</li>
+ *   <li>★46 低版本拒载已随 API 版本协商面退场悬置(★v1.14/32 号)——api 缺席
+ *       拒载仍在 onEnable 首行(拒载路径本体归 runServer 冒烟);</li>
+ *   <li>坏贡献(★51 消费方侧形状):贡献「无人供给依赖」组件的描述符在框架收录闸
+ *       响亮抛(onEnable 失败 = 拒载信号;行为本体由框架侧测试承载,样例示范形状);
+ *       同时断言合法贡献声明。</li>
  * </ul>
- *
- * <p>零 Bukkit 静态调用(compileOnly paper-api 仅类型可见;★45:样例仅依赖白名单)。
+ * <p>零 Bukkit 静态调用(★45:样例仅依赖白名单)。
  */
 class TheirPluginGuardsTest {
-
-    // ── ★46 低版本拒载:版本判定真值表 ─────────────────────────────
-
-    @Test
-    void lowOrMissingApiVersionDisablesPlugin() {
-        assertTrue(TheirPlugin.shouldDisable(null, TheirPlugin.REQUIRED_API_VERSION),
-                "api 缺席 → 拒载(14.36)");
-        assertTrue(TheirPlugin.shouldDisable(2, TheirPlugin.REQUIRED_API_VERSION),
-                "API_VERSION 低于要求 → 拒载(14.36)");
-        assertTrue(TheirPlugin.shouldDisable(6, TheirPlugin.REQUIRED_API_VERSION),
-                "v6 < 要求 7 → 拒载(14.36;★v1.8 起要求 7,地图声明按路径直交 + 瘦身)");
-        assertFalse(TheirPlugin.shouldDisable(7, TheirPlugin.REQUIRED_API_VERSION),
-                "恰好满足 → 放行(One-Version Rule,不要求更新面)");
-        assertFalse(TheirPlugin.shouldDisable(8, TheirPlugin.REQUIRED_API_VERSION),
-                "更高版本 → 放行(只增不减,D7)");
-    }
 
     // ── ★51 消费方侧:合法贡献声明 + 坏贡献形状(★v1.6 显式注册口径) ──
 

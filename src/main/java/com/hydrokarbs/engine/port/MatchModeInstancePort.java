@@ -15,13 +15,10 @@ import com.hydrokarbs.map.MapDefinition;
 
 /**
  * 实例自面:框架「基础端口」的落点(02-核心概念 §2.5;结束/切换都从这里走)。
+ * 实现体是实例容器(self 端口组,捕获容器自身)。
  *
- * <p>实现体是 1.3 的实例容器(self 端口组,捕获容器自身)。本阶段只定义签名,
- * 签名写偏则 1.3/1.5 全线返工——与设计案 §2.5 逐字对照。
- *
- * <p>★v4(2.6)唯一修订:新增 {@link #session()}(我所属会话的只读视图,
- * §2.8-决断四)——只增该方法,其余签名不动;实现体与只读读口
- * {@code MatchModeInstanceView#session()} 同型(同一方法双满足)。
+ * <p>★v4 唯一修订:新增 {@link #session()}(我所属会话的只读视图,§2.8-决断四)
+ * ——只增该方法,其余签名不动。
  */
 public interface MatchModeInstancePort {
 
