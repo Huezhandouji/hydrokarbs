@@ -28,7 +28,7 @@
 3. **约定键与唯一标签读口**:`MapDefinition.TAGS = AttributeBag.Key.of("tags", stringSetType())`(`map/MapDefinition.java:37-38`,受检擦除转换只校验到 `Set` 层);`tags()` = `metadata.getOrDefault(TAGS, Set.of())`(`:79-81`)——全框架唯一标签读口;`MapRegistry#byTag` 只经此口(`map/MapRegistry.java:157-166`);`MapInfo` 构造期 `Set.copyOf` 再收口(`api/view/MapInfo.java:16-19`)。其余词料由宿主自定 `Key` 原样携带,框架只解释 `TAGS`。
 4. **三件退场(零过渡窗口)**:`Object metadata` 与「按引用存储、视为冻结」契约、`map/TagProvider` 整接口、`map/MetaAttributes` 整类全部删除;`map/` 包 = `MapDefinition` + `MapRegistry` 两件。`null` 语义由 `empty()` 取代。
 5. **命名消歧**:旧 `AttributeBag`(命名空间 + 名字 + 类型、断言、授权表、`attrs()`)仍在 CONTEXT「历史术语」废止名单,废止不变;现役 `AttributeBag` 是不同机制。机械分界 = `Key` 二元组、无 `namespace`/`bindComponent`/`setNamespaceCheckEnabled` 成员、不参与实例 `close()`。
-6. **公共面与版本**:`MiniGameApi` 17 方法签名一字不动;`API_VERSION` **维持 7**(方法面零变化,破坏性在声明形状侧);`ApiSurfaceTest` BASELINE 合法重录(增回 `AttributeBag` 及其 `Key`/`Builder`/三读口/`empty`,删 `TagProvider#tags()` 行,`MapDefinition` 第三分量类型改为 `AttributeBag`),背书 = 本 ADR;★19 FROZEN 17 行不动;★26 维持废止(命名空间断言检验不复活),★63② 由容器结构恢复。
+6. **公共面与版本**:`HydrokarbsApi` 17 方法签名一字不动;`API_VERSION` **维持 7**(方法面零变化,破坏性在声明形状侧);`ApiSurfaceTest` BASELINE 合法重录(增回 `AttributeBag` 及其 `Key`/`Builder`/三读口/`empty`,删 `TagProvider#tags()` 行,`MapDefinition` 第三分量类型改为 `AttributeBag`),背书 = 本 ADR;★19 FROZEN 17 行不动;★26 维持废止(命名空间断言检验不复活),★63② 由容器结构恢复。
 
 ## 替代方案(已否)
 
@@ -47,7 +47,7 @@
 
 ## 后果
 
-- 正:`engine/AttributeBag`(纯容器:`Key` 二元组、`Builder` 唯一写侧、`Map.copyOf` 收口、`get/getOrDefault/has` 三读口、`empty()`)回归;`MapDefinition(Path, ResetStrategy, AttributeBag)` + `TAGS` + `tags()` 定案;`map/TagProvider`、`map/MetaAttributes` 与 `Object metadata` 全删;`map/` 包两件;`API_VERSION` 维持 7、`MiniGameApi` 17 法不动;★19 FROZEN 17 行不动、★44 BASELINE 合法重录(背书 = 本 ADR)。
+- 正:`engine/AttributeBag`(纯容器:`Key` 二元组、`Builder` 唯一写侧、`Map.copyOf` 收口、`get/getOrDefault/has` 三读口、`empty()`)回归;`MapDefinition(Path, ResetStrategy, AttributeBag)` + `TAGS` + `tags()` 定案;`map/TagProvider`、`map/MetaAttributes` 与 `Object metadata` 全删;`map/` 包两件;`API_VERSION` 维持 7、`HydrokarbsApi` 17 法不动;★19 FROZEN 17 行不动、★44 BASELINE 合法重录(背书 = 本 ADR)。
 - 负:消费方迁移——`new MapDefinition(path, metadataObject)` 改为 `new MapDefinition(path, bag)`(无词料传 `AttributeBag.empty()`);标签声明从「`metadata` 实现 `TagProvider`」改为 `new AttributeBag.Builder().put(MapDefinition.TAGS, Set.of("tag")).build()`;`TagProvider`/`MetaAttributes` 调用点编译期即断;值深度冻结仍靠契约;`TAGS` 元素类型只校验到 `Set` 层。
 - 验收:`gradlew build` 绿 + `grep -rn "TagProvider\|MetaAttributes" src/` 零命中 + `engine/AttributeBag.java` 无 `namespace` 命中(本次验收);不新增 ★ 编号,★26 维持废止、★63② 由容器结构恢复。
 - 文档修改点(本裁决同步落盘):`02-核心概念.md` §2.7(纯容器语义再改写);`07-公共API.md`(§7.1 契约块、registerMap 行、§7.2 冻结/值对象/版本协商行、§7.5 地图行);`14-陷阱清单.md` 14.20③/14.26/14.29(条目号不动);`16-路线图与验收.md`(★26/★63 再校准注、★v1.11 修订注、16.4 速查);`00-假设与体检.md`(v1.11 定位、§0.5.17);`03-会话与模式切换.md`(§3.7 策略来源句);`12-代码骨架.md`(§12.1 包树、§12.2 增量注);`13-扩展步骤.md`(§13.1/§13.11);`CONTEXT.md`(历史术语注 + 现役 `AttributeBag`/`tags()` 词条);`README.md`/`docs/设计文档/README.md`/`AGENTS.md`(版本链、硬边界、索引);`26`/`28` 号头部状态注(正文存档不改写)。

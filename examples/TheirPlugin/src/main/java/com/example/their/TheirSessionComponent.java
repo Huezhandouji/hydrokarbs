@@ -9,14 +9,14 @@ import com.hydrokarbs.engine.port.SessionServices;
 
 /**
  * 第三方会话组件贡献(★v1.1-D14 通道一的贡献物样例;7.5 施工文档步骤 10;
- * ★v1.6 起经 {@code MiniGameApi#registerSessionComponents} 显式注册):
+ * ★v1.6 起经 {@code HydrokarbsApi#registerSessionComponents} 显式注册):
  * 宿主级会话策略的最小占位——真实策略组件在此实现自定义重连/宽限/准入记账等
  * (07 §7.3「适用」行);本样例只演示贡献声明形状与纪律。
  *
  * <p>纪律要点(镜像 {@link TheirBannerComponent} 的基类纪律,§2.5.1):
  * {@code create} 是唯一装配点(构造私有);svc 构造期注入先于一切钩子;
  * 异常只隔离自己(D9 quarantine,会话不解散);随 dissolve 全灭(无运行期拆卸)。
- * 贡献面 = 本 Spec 经 {@code MiniGameApi#registerSessionComponents} 进
+ * 贡献面 = 本 Spec 经 {@code HydrokarbsApi#registerSessionComponents} 进
  * 框架收录闸(干跑校验:组件 id = 供给面类型名,与既有贡献撞名 → 响亮拒)。
  */
 public final class TheirSessionComponent extends SessionComponent {

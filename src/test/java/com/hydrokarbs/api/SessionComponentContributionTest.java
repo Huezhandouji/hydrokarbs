@@ -13,7 +13,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.hydrokarbs.api.view.SessionInfo;
 import com.hydrokarbs.engine.component.ComponentDependencyException;
 import com.hydrokarbs.engine.component.SessionComponent;
 import com.hydrokarbs.engine.component.SessionComponentContributionRegistry;
@@ -57,11 +56,11 @@ class SessionComponentContributionTest {
         harness = new OfflineApi(FakeWorldPort.immediate(), MODE);
         // ★v1.13/31 号适配:首切失败不再「无实例驻留」而是泊回退——本 rig 回退为空串
         //(无效回退 → SEVERE + 解散),无地图时会话创建即散、后续断言全塌;注册一张
-        // probe 模式可用的图让首切实例就位(镜像 MiniGameApiMembersTest 装配惯例)。
+        // probe 模式可用的图让首切实例就位(镜像 HydrokarbsApiMembersTest 装配惯例)。
         MapTestKit.registered(harness.maps, MapTestKit.newMapsDir(), "probe_map", OfflineApi.TAG);
     }
 
-    /** 假会话服务:记录 create 收到的 spec(合并序断言面;镜像 MiniGameApiImplTest 假件)。 */
+    /** 假会话服务:记录 create 收到的 spec(合并序断言面;镜像 HydrokarbsApiImplTest 假件)。 */
     private static final class SpecRecordingService extends StubSessionService {
 
         final List<SessionSpec> specs = new ArrayList<>();
@@ -88,7 +87,7 @@ class SessionComponentContributionTest {
 
         // 合并序(注册序 → recipe.extra):假服务记录 spec 断言输入面
         SpecRecordingService recorder = new SpecRecordingService();
-        MiniGameApiImpl recording = new MiniGameApiImpl(recorder, harness.modes, harness.maps,
+        HydrokarbsApiImpl recording = new HydrokarbsApiImpl(recorder, harness.modes, harness.maps,
                 harness.globalEvents, contributions, Runnable::run, () -> "");
         recording.createSession(SessionRecipe.of(MODE_ID, null));
         SessionProbeComponent.Spec extraSpec = new SessionProbeComponent.Spec(new ArrayList<>());
@@ -145,11 +144,11 @@ class SessionComponentContributionTest {
     @Test
     void recipeExtraJoinsSessionAndDiesWithDissolve() {
         List<String> log = new ArrayList<>();
-        SessionInfo info = harness.api.createSession(
+        SessionHandle handle = harness.api.createSession(
                 new SessionRecipe(MODE_ID, Optional.empty(), List.of(),
                         List.of(new SessionProbeComponent.Spec(log))));
 
-        Session created = harness.service.session(new SessionId(info.sessionId())).orElseThrow();
+        Session created = harness.service.session(new SessionId(handle.sessionId())).orElseThrow();
         assertTrue(created.sessionComponents().byId("SessionProbeComponent").isPresent(),
                 "recipe.extra 进表(★52)");
         assertTrue(log.contains("SessionProbeComponent:awake")
@@ -189,11 +188,11 @@ class SessionComponentContributionTest {
     @Test
     void contributedComponentQuarantinesItselfOnly() {
         List<String> log = new ArrayList<>();
-        SessionInfo info = harness.api.createSession(
+        SessionHandle handle = harness.api.createSession(
                 new SessionRecipe(MODE_ID, Optional.empty(), List.of(),
                         List.of(new SessionProbeComponent.Spec(log).failOnUpdate("boom"))));
 
-        Session created = harness.service.session(new SessionId(info.sessionId())).orElseThrow();
+        Session created = harness.service.session(new SessionId(handle.sessionId())).orElseThrow();
         harness.ticker.tickAll();                     // ★v1.13/31 号:有图后首切在途,驱动两拍落位
         harness.ticker.tickAll();                     // (api.createSession 不驱拍,镜像 OfflineApi.createSession 惯例)
         created.tickSessionComponents();              // 运行期 update 抛 → D9 隔离

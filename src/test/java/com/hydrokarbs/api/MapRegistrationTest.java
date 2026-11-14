@@ -77,9 +77,11 @@ class MapRegistrationTest {
         assertEquals("their_arena", session.currentInstance().orElseThrow().view().map().id(),
                 "开局落在注册式地图上(★54「可被 switchMode 选中并开局」)");
 
-        // 指定图切换:注册式地图可被显式选中(20-D4:注册只交声明,世界照走 WorldPort)
-        CompletableFuture<SwitchResult> future = harness.api.switchMode("s1",
-                new MatchModeSelection(MODE_ID, Optional.of("their_arena2"), true), Handoff.empty());
+        // 指定图切换:注册式地图可被显式选中(20-D4:注册只交声明,世界照走 WorldPort;
+        // ★v1.15/33 号:切换经会话句柄)
+        CompletableFuture<SwitchResult> future = harness.api.session("s1").orElseThrow()
+                .switchMode(new MatchModeSelection(MODE_ID, Optional.of("their_arena2"), true),
+                        Handoff.empty());
         harness.ticker.tickAll();
         assertInstanceOf(SwitchResult.Succeeded.class, future.join(), "指定注册图切换成功");
         assertEquals("their_arena2", session.currentInstance().orElseThrow().view().map().id(),

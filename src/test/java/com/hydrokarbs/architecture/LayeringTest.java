@@ -63,17 +63,22 @@ class LayeringTest {
                     .resideInAnyPackage("com.hydrokarbs.bridge.role..");
 
     /**
-     * ★-末条:api 只依赖 engine 与平台原语(§16.2)。允许集三项技术修正(命题不变、
+     * ★-末条:api 只依赖 engine 与平台原语(§16.2)。允许集四项技术修正(命题不变、
      * 非放宽):{@code net.kyori..}(Adventure 平台原语)、{@code com.hydrokarbs.map..}
      * (07 §7.2 白名单「map/ 读面」,registerMap 签名必需)、{@code com.hydrokarbs.api..}
-     * (接口↔view record 同包组合面)。api 仍不得依赖 mode/component/bridge/service/任何 Impl。
+     * (接口↔view record 同包组合面)、{@code org.jetbrains.annotations..}(nullness
+     * 声明注解——用户裁决:api 面参数全量 {@code @NotNull} 防外部传 null;CLASS 保留、
+     * 零运行期行为,经 kotlin-stdlib/adventure 传递既在编译类路径,非新增依赖面;
+     * 只放行 annotations 子包,不得波及 org.jetbrains 其余家族)。api 仍不得依赖
+     * mode/component/bridge/service/任何 Impl。
      */
     @ArchTest
     static final ArchRule apiDependsOnlyOnEngine =
             classes().that().resideInAPackage("..api..")
                     .should().onlyDependOnClassesThat()
                     .resideInAnyPackage("..engine..", "java..", "io.papermc..", "org.bukkit..",
-                            "net.kyori..", "com.hydrokarbs.map..", "com.hydrokarbs.api..")
+                            "net.kyori..", "com.hydrokarbs.map..", "com.hydrokarbs.api..",
+                            "org.jetbrains.annotations..")
                     .allowEmptyShould(true);
 
     // ── ★40 服务层分层冻结(1.6 落地;18 号修正案 §7;14.33 双向互不可见)──
@@ -91,7 +96,7 @@ class LayeringTest {
 
     /**
      * ★40-增款(★v1.1;14-陷阱清单 14.37/19-D10;7.5 施工文档步骤 11):服务层不得
-     * import {@code api/**}——服务是引擎内部居民,不消费 {@code MiniGameApi}(三通道
+     * import {@code api/**}——服务是引擎内部居民,不消费 {@code HydrokarbsApi}(三通道
      * 原文保留;{@code joinSession}/leaveSession 扩大的是外部调用方阵营,不构成第四通道)。
      * 显式两包锚定(engine.service 与顶层 service;沿 1.4 锚定口径),与既有 ★40-a/b
      * 并列、无一字放宽。

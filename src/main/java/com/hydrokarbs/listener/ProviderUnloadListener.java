@@ -8,7 +8,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.Plugin;
 
-import com.hydrokarbs.api.MiniGameApiImpl;
+import com.hydrokarbs.api.HydrokarbsApiImpl;
 
 /**
  * 插件卸载兜底监听({@code PluginDisableEvent};14.38):任何插件 disable 时按
@@ -25,9 +25,9 @@ import com.hydrokarbs.api.MiniGameApiImpl;
  */
 public final class ProviderUnloadListener implements Listener {
 
-    private final MiniGameApiImpl api;
+    private final HydrokarbsApiImpl api;
 
-    public ProviderUnloadListener(MiniGameApiImpl api) {
+    public ProviderUnloadListener(HydrokarbsApiImpl api) {
         this.api = Objects.requireNonNull(api, "api");
     }
 

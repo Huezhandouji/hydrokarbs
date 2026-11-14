@@ -20,8 +20,8 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.hydrokarbs.api.MiniGameApi;
-import com.hydrokarbs.api.MiniGameApiImpl;
+import com.hydrokarbs.api.HydrokarbsApi;
+import com.hydrokarbs.api.HydrokarbsApiImpl;
 import com.hydrokarbs.bridge.config.ConfigRepository;
 import com.hydrokarbs.bridge.world.BukkitWorldLoader;
 import com.hydrokarbs.bridge.world.WorldPortImpl;
@@ -67,7 +67,7 @@ public final class HydrokarbsAssembly {
      * {@code api} 为对外公共面实现(★19 冻结面;shutdown 先摘,防 reload 窗口悬挂引用)。
      */
     public record Context(ServiceRegistry services, EngineTicker ticker, SessionService sessions,
-                          ExecutorService worldIo, MiniGameApi api) {
+                          ExecutorService worldIo, HydrokarbsApi api) {
     }
 
     /** onEnable 全部装配序列(线性;失败上抛 = 插件拒载)。 */
@@ -139,22 +139,22 @@ public final class HydrokarbsAssembly {
 
         // ⑭ 公共 API 注册(ServicesManager,§7.2 表;★v1.7 冻结面 = 17 方法;
         //    fallbackModeId 惰性读配置;回退模式经 SPI 注册,无提供方归属,第三方不可摘)
-        var miniGameApi = new MiniGameApiImpl(sessionSvc, modeRegistry,
+        var hydrokarbsApi = new HydrokarbsApiImpl(sessionSvc, modeRegistry,
                 configRepository.maps(), sessionEvents, contributions,
                 Threads::runOnMain, () -> cfg.get("session.fallback-mode", ""));
         plugin.getServer().getServicesManager()
-                .register(MiniGameApi.class, miniGameApi, plugin, ServicePriority.Normal);
+                .register(HydrokarbsApi.class, hydrokarbsApi, plugin, ServicePriority.Normal);
         // ⑭b 卸载兜底监听(★v1.2/★v1.6):按提供方摘模式/地图/贡献(模式摘除带回退编排)
         plugin.getServer().getPluginManager().registerEvents(
-                new ProviderUnloadListener(miniGameApi), plugin);
+                new ProviderUnloadListener(hydrokarbsApi), plugin);
 
-        return new Context(services, ticker, sessionSvc, worldIo, miniGameApi);
+        return new Context(services, ticker, sessionSvc, worldIo, hydrokarbsApi);
     }
 
     /** onDisable 镜像:先摘公共面 → 停节拍 → 解散全部会话(传主城,含世界句柄释放) → 逆序关停服务 → 收执行器。 */
     public static void shutdown(Context ctx) {
         // 公共面先摘(幂等):防 reload 窗口第三方 load() 拿到悬挂实现
-        Bukkit.getServicesManager().unregister(MiniGameApi.class, ctx.api());
+        Bukkit.getServicesManager().unregister(HydrokarbsApi.class, ctx.api());
         ctx.ticker().close();           // ★ 必取消,否则重载后任务翻倍(14.6)
         for (var session : ctx.sessions().all()) {
             ctx.sessions().dissolve(session.id(), DissolveReason.SHUTDOWN);   // §12.2 关停驱动

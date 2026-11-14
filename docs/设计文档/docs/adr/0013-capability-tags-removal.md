@@ -36,7 +36,7 @@
 
 ## 后果
 
-- 正:★60 冻结(类型化桥接 = 外部能力唯一形态 + 标签机制零残留);MiniGameApi 编译面 19 → 17;`ProviderUnloadListener` 兜底三族;阶段 A 失败路径收窄为 A1/A3~A6;冻结快照 FROZEN 17 行/BASELINE 重录(API_VERSION=6)。
+- 正:★60 冻结(类型化桥接 = 外部能力唯一形态 + 标签机制零残留);HydrokarbsApi 编译面 19 → 17;`ProviderUnloadListener` 兜底三族;阶段 A 失败路径收窄为 A1/A3~A6;冻结快照 FROZEN 17 行/BASELINE 重录(API_VERSION=6)。
 - 负:`API_VERSION` 6 窗口内未迁移的消费方拒载或编译失败(两公共法与 `MatchModeMeta` 位置实参);纯零编译契约场景失去(未决 25 §6-Q1);存量会话在 provider 摘除后不再有框架侧的标签级防线(由组件降级与 quarantine 承接)。
 - 验收:★60(命题文本见 25 §5;落 §16.2 由「编辑·正文与术语」执行);★32/★21 就地注同表。
 - 未决移交:25 §6(纯跨插件零编译契约场景 / 战绩悬置承接 / Shdf 侧桥接接线随玩法线施工计划)。

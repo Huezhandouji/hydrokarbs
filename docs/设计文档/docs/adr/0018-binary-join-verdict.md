@@ -19,7 +19,7 @@
 
 1. **`Kind` 收缩为二值**:`public enum Kind { ADMIT, REJECT }`(`engine/port/JoinDecision.java:18-23`);`SPECTATE` 常量删除。引擎行为零变化——两处 `== REJECT` 分支、两处无实现者默认 `ADMIT`、`JoinResult` 的 `Joined`/`Rejected` 两分支全部原样。
 2. **观战安置归组件层**:引擎结构词汇只表达「收不收」;「怎么安置」是玩法/表现概念,组件在 `ADMIT` 之后用自己的词汇自理。消费点注释统一口径「ADMIT 成为参赛者;观战安置非引擎词汇,归组件层」。
-3. **公共面与版本**:`MiniGameApi` 17 方法签名一字不动;`API_VERSION` **维持 7**(方法面零变化,破坏性在枚举常量侧);`ApiSurfaceTest` BASELINE 删 `JoinDecision$Kind#SPECTATE` 一行后合法重录,背书 = 本 ADR;★19 FROZEN 17 行不动。
+3. **公共面与版本**:`HydrokarbsApi` 17 方法签名一字不动;`API_VERSION` **维持 7**(方法面零变化,破坏性在枚举常量侧);`ApiSurfaceTest` BASELINE 删 `JoinDecision$Kind#SPECTATE` 一行后合法重录,背书 = 本 ADR;★19 FROZEN 17 行不动。
 4. **测试改写**:`SessionRosterTransferTest` 触发点②的原观战位用例随枚举删除改写为第二例 `ADMIT`;修测试理由按 AGENTS §4-12 写入测试 javadoc;覆盖不缩水(`REJECT` 不收/名册不登记 + `ADMIT` 进实例两面均保留)。
 5. **词汇边界**:「观战」仍是现役**组件**概念(`06-共享组件.md` #16 `VisibilityComponent`、`01-分层架构.md:208`、`SessionIngestListener.java:81` 的组件侧职责表述保留);退场的只是引擎枚举常量,不是「观战」这件事。
 6. **版本轴登记**:**同一 `API_VERSION=7` 窗口内的又一次公共面收缩**不升版本常量——沿用 28 §6-Q1 / 29 §6-Q1 先例:编译期暴露是主要失败面;出现真实消费方误用时再评估版本轴。
@@ -39,7 +39,7 @@
 
 ## 后果
 
-- 正:`JoinDecision.Kind` = `ADMIT`/`REJECT`;`SPECTATE` 全库退场;引擎两处 `== REJECT` 与默认 `ADMIT` 原样;`MiniGameApi` 17 法与 `API_VERSION = 7` 零改动;★19 FROZEN 17 行不动、★44 BASELINE 删一行后合法重录(背书 = 本 ADR);不新增 ★ 编号,计数维持 65。
+- 正:`JoinDecision.Kind` = `ADMIT`/`REJECT`;`SPECTATE` 全库退场;引擎两处 `== REJECT` 与默认 `ADMIT` 原样;`HydrokarbsApi` 17 法与 `API_VERSION = 7` 零改动;★19 FROZEN 17 行不动、★44 BASELINE 删一行后合法重录(背书 = 本 ADR);不新增 ★ 编号,计数维持 65。
 - 负:任何写 `JoinDecision.Kind.SPECTATE` 的代码在编译期即断(当前 `src/`/`examples/` 零命中);组件若需要观战安置,须在 `ADMIT` 之后以自己的词汇实施,引擎不提供安置回执;历史存档中的三值叙述保留。
 - 验收:`gradlew build` 绿 + `grep -rn "SPECTATE" src/ examples/` 零命中(本次验收);不新增 ★ 编号。
 - 文档修改点(本裁决同步落盘):`03-会话与模式切换.md`(§3.1 状态机图、§3.2.1 javadoc/枚举/规则段、头部版本行);`00-假设与体检.md`(§0.5.4 行内现行口径注);`06-共享组件.md`(#24 行与「第四迁」段注);`CONTEXT.md`(现役 `JoinControlComponent` 行、历史术语表新增 `JoinDecision.Kind#SPECTATE` 行、头部版本链);`docs/设计文档/README.md`(头部版本链、v3.2 定位段注、修正案/ADR 索引、阅读路径);`docs/设计文档/AGENTS.md` 简报未列入、本窗口不动(其横幅版本链与 §4-10/§5 的术语口径建议同步)。

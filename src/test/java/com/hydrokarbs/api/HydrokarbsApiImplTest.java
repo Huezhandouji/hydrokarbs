@@ -67,19 +67,21 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
 /**
- * {@link MiniGameApiImpl} 离线行为断言(7.1 施工文档「测试与验收」;★v1.3 适配:
+ * {@link HydrokarbsApiImpl} 离线行为断言(7.1 施工文档「测试与验收」;★v1.3 适配:
  * fake 会话服务以测试源集假模式代目录,战绩透传断言随悬置不落地)。
  *
- * <p>覆盖六组:①快照不变性(取快照后改 fake 名册,旧 SessionInfo.members 不变);
- * ②会话不存在 switchMode 完成 Rejected(MODE_NOT_FOUND) 且旧会话无扰动;③线程断言
- * (fake 记录的调用线程 = 注入的主线程执行器线程,§14.1);④目录顺序 = 注册序
- * (不排序不过滤,14.21);⑤createSession(recipe) 未知模式响亮抛、成功路径返回快照与
- * fake 会话一致;⑥视图 record 分量无引擎活类型(反射)。
+ * <p>覆盖六组:①快照不变性(取快照后改 fake 名册,旧 SessionInfo.members 不变;
+ * ★v1.15/33 号:快照经句柄 {@code info()} 现取);②句柄失效(会话消亡)switchMode
+ * 完成 Rejected(MODE_NOT_FOUND) 且存活会话无扰动(33 号语义迁移:「id 不存在」
+ * 前移为解析点 empty);③线程断言(fake 记录的调用线程 = 注入的主线程执行器线程,
+ * §14.1);④目录顺序 = 注册序(不排序不过滤,14.21);⑤createSession(recipe)
+ * 未知模式响亮抛、成功路径返句柄、快照与 fake 会话一致;⑥视图 record 分量无引擎
+ * 活类型(反射)。
  *
  * <p>离线:零 Bukkit import/静态调用(paper-api 仅 testRuntimeOnly 进运行期,
  * 同 OfflineAssembly.FakePlatform 先例);假会话用引擎真 Session(离线可构造)。
  */
-class MiniGameApiImplTest {
+class HydrokarbsApiImplTest {
 
     @TempDir
     Path tempDir;
@@ -88,7 +90,7 @@ class MiniGameApiImplTest {
     private MapRegistry mapRegistry;
     private FakeSessionService fakeService;
     private ExecutorService mainExecutor;
-    private MiniGameApi api;
+    private HydrokarbsApi api;
 
     @BeforeEach
     void setUp() {
@@ -104,10 +106,10 @@ class MiniGameApiImplTest {
             return thread;
         });
         // 7.5 构造增量:⑨ 汇聚总线 + D14 贡献收录表(空表;本测试零消费,
-        //   增量行为由 MiniGameApiMembersTest/MiniGameApiEventsTest/ContributionTest 承载);
+        //   增量行为由 HydrokarbsApiMembersTest/HydrokarbsApiEventsTest/ContributionTest 承载);
         //   ★v1.6 构造增量:fallbackModeId 空读口(本测试不消费摘除回退编排);
         //   ★v1.7 起构造不再收能力标签机制件(25 号修正案)
-        api = new MiniGameApiImpl(fakeService, modeRegistry, mapRegistry,
+        api = new HydrokarbsApiImpl(fakeService, modeRegistry, mapRegistry,
                 new SessionEventBus(), new SessionComponentContributionRegistry(), mainExecutor,
                 () -> "");
     }
@@ -130,38 +132,49 @@ class MiniGameApiImplTest {
         UUID alice = UUID.randomUUID();
         session.roster().join(alice);
 
-        SessionInfo before = api.sessions().get(0);
+        SessionInfo before = api.sessions().get(0).info().orElseThrow();
         assertEquals(List.of(alice), before.members(), "快照取到加入序名册");
 
         UUID bob = UUID.randomUUID();
         session.roster().join(bob);                     // 取快照后改 fake 名册
 
         assertEquals(List.of(alice), before.members(), "旧快照不变(快照纪律)");
-        assertEquals(Set.of(alice, bob), Set.copyOf(api.sessions().get(0).members()),
-                "新快照反映最新名册");
+        assertEquals(Set.of(alice, bob),
+                Set.copyOf(api.sessions().get(0).info().orElseThrow().members()),
+                "新快照反映最新名册(句柄现取)");
         assertThrows(UnsupportedOperationException.class, () -> before.members().add(bob),
                 "快照集合不可变(List.copyOf)");
     }
 
-    // ── ② 会话不存在:Rejected(MODE_NOT_FOUND),旧会话无扰动 ─────────────
+    // ── ② 句柄失效(会话消亡):Rejected(MODE_NOT_FOUND),存活会话无扰动 ───
+    //    ★v1.15/33 号语义迁移:「id 不存在」前移为解析点 empty(同步早失败),
+    //    future 内 Rejected 只剩「句柄在手后会话消亡」一态——本测即此态。
 
     @Test
-    void switchModeOnMissingSessionCompletesRejectedWithoutDisturbance() throws Exception {
+    void switchModeOnDissolvedSessionCompletesRejectedWithoutDisturbance() throws Exception {
         Session live = fakeService.create(new SessionSpec(new SessionId("live"), "m1", List.of()));
         UUID alice = UUID.randomUUID();
         live.roster().join(alice);
+        fakeService.create(new SessionSpec(new SessionId("ghost"), "m1", List.of()));
+        SessionHandle ghost = api.session("ghost").orElseThrow();
+        fakeService.sessions.remove(new SessionId("ghost"));   // 模拟解散摘除(句柄失效)
+
+        // 33 号语义迁移:「id 不存在」前移为解析点 empty(同步早失败)——旧 ②组
+        // 「从未存在的 id」形态在此承接:消亡后与从未存在同走 empty,不再产出句柄。
+        assertTrue(api.session("ghost").isEmpty(), "消亡会话不再解析出句柄(解析点早失败)");
+        assertTrue(api.session("never-there").isEmpty(), "从未存在的 id 同口径 → empty");
 
         CompletableFuture<SwitchResult> future =
-                api.switchMode("ghost", MatchModeSelection.of("m2"), Handoff.empty());
+                ghost.switchMode(MatchModeSelection.of("m2"), Handoff.empty());
         SwitchResult result = future.get(5, TimeUnit.SECONDS);
 
         SwitchResult.Rejected rejected = assertInstanceOf(SwitchResult.Rejected.class, result,
-                "会话不存在 → Rejected(7.1 委托表失败语义)");
+                "会话消亡 → Rejected(7.1 委托表失败语义;★v1.15 句柄失效语义)");
         assertEquals(SwitchResult.Reason.MODE_NOT_FOUND, rejected.code(),
                 "「要找的 id 不在注册表」语义(§3.2 码表)");
-        assertTrue(rejected.detail().contains("ghost"), "detail 点名不存在的会话 id");
+        assertTrue(rejected.detail().contains("ghost"), "detail 点名消亡会话 id");
         assertTrue(fakeService.switchInvocations.isEmpty(),
-                "会话不存在短路,未委托引擎 switchMode");
+                "会话消亡短路,未委托引擎 switchMode");
         assertEquals(SessionState.RUNNING, live.state(), "旧会话状态无扰动");
         assertEquals(List.of(alice), live.roster().all().stream().map(SessionMember::uuid).toList(),
                 "旧会话名册无扰动");
@@ -180,8 +193,8 @@ class MiniGameApiImplTest {
         assertTrue(probed.await(5, TimeUnit.SECONDS), "探测任务未执行(执行器哑火)");
 
         fakeService.create(new SessionSpec(new SessionId("s1"), "m1", List.of()));
-        CompletableFuture<SwitchResult> future =
-                api.switchMode("s1", MatchModeSelection.of("m1"), Handoff.empty());
+        CompletableFuture<SwitchResult> future = api.session("s1").orElseThrow()
+                .switchMode(MatchModeSelection.of("m1"), Handoff.empty());
         SwitchResult result = future.get(5, TimeUnit.SECONDS);
 
         assertEquals(1, fakeService.switchInvocations.size());
@@ -253,17 +266,18 @@ class MiniGameApiImplTest {
 
         NoSuchElementException thrown = assertThrows(NoSuchElementException.class,
                 () -> api.createSession(SessionRecipe.of("ghost-mode", "map_a")),
-                "未知模式响亮抛(引擎既有 require 口径,§12.1)");
+                "未知模式响亮抛(引擎既有 require 口径,§12.1;抛时句柄不存在)");
         assertTrue(thrown.getMessage().contains("ghost-mode"), "异常点名未知模式 id");
 
-        SessionInfo info = api.createSession(SessionRecipe.of("m1", "map_a"));
-        Session created = fakeService.session(new SessionId(info.sessionId())).orElseThrow();
+        SessionHandle handle = api.createSession(SessionRecipe.of("m1", "map_a"));
+        SessionInfo info = handle.info().orElseThrow();   // ★v1.15:句柄唯一信息口(组合式)
+        Session created = fakeService.session(new SessionId(handle.sessionId())).orElseThrow();
         assertEquals(created.id().value(), info.sessionId(), "快照与 fake 会话一致: sessionId");
         assertEquals("", info.modeId(), "首切换在途,无实例 → 空串(空串口径)");
         assertEquals("", info.mapId(), "首切换在途,无实例 → 空串(空串口径)");
         assertEquals(List.of(), info.members(), "新建会话名册为空");
         assertEquals(SessionState.RUNNING.name(), info.state(), "state = 状态机名字符串");
-        assertTrue(info.sessionId().startsWith("api-"), "api 建会话 id 带框架前缀(可辨认来源)");
+        assertTrue(handle.sessionId().startsWith("api-"), "api 建会话 id 带框架前缀(可辨认来源)");
 
         SessionSpec spec = fakeService.createdSpecs.get(0);
         assertEquals("m1", spec.initialModeId(), "initialModeId 透传");
@@ -288,23 +302,28 @@ class MiniGameApiImplTest {
         }
     }
 
-    /** 泛型实参反射不可区分,由本测试补断言(SurfaceTest 归一化规则的缺口)。 */
+    /** 泛型实参反射不可区分,由本测试补断言(SurfaceTest 归一化规则的缺口;
+     *  ★v1.15/33 号:会话三查询泛型实参 SessionInfo → SessionHandle、createSession
+     *  返句柄、switchMode 泛型断言随方法迁 SessionHandle、新增 info() 实参加
+     *  SessionInfo 接管)。 */
     @Test
     void genericReturnTypesBindSnapshotTypes() throws Exception {
-        Method switchMode = MiniGameApi.class.getMethod("switchMode",
-                String.class, MatchModeSelection.class, Handoff.class);
-        assertEquals(SwitchResult.class, actualTypeArgument(switchMode));
-        assertEquals(SessionInfo.class,
-                actualTypeArgument(MiniGameApi.class.getMethod("sessions")));
-        assertEquals(SessionInfo.class,
-                actualTypeArgument(MiniGameApi.class.getMethod("sessionOf", UUID.class)));
+        assertEquals(SessionHandle.class,
+                actualTypeArgument(HydrokarbsApi.class.getMethod("sessions")));
+        assertEquals(SessionHandle.class,
+                actualTypeArgument(HydrokarbsApi.class.getMethod("sessionOf", UUID.class)));
         assertEquals(MatchModeInfo.class,
-                actualTypeArgument(MiniGameApi.class.getMethod("modes")));
-        assertEquals(MapInfo.class, actualTypeArgument(MiniGameApi.class.getMethod("maps")));
+                actualTypeArgument(HydrokarbsApi.class.getMethod("modes")));
+        assertEquals(MapInfo.class, actualTypeArgument(HydrokarbsApi.class.getMethod("maps")));
         assertEquals(MatchModeInfo.class,
-                actualTypeArgument(MiniGameApi.class.getMethod("mode", String.class)));
-        assertEquals(SessionInfo.class, MiniGameApi.class
+                actualTypeArgument(HydrokarbsApi.class.getMethod("mode", String.class)));
+        assertEquals(SessionHandle.class, HydrokarbsApi.class
                 .getMethod("createSession", SessionRecipe.class).getReturnType());
+        assertEquals(SessionInfo.class,
+                actualTypeArgument(SessionHandle.class.getMethod("info")));
+        Method switchMode = SessionHandle.class.getMethod("switchMode",
+                MatchModeSelection.class, Handoff.class);
+        assertEquals(SwitchResult.class, actualTypeArgument(switchMode));
     }
 
     private static Class<?> actualTypeArgument(Method method) {

@@ -6,7 +6,7 @@
 
 ## 背景
 
-★v1.1-D7 引入的版本协商机制由三件组成:API 面常量 `MiniGameApi.API_VERSION`(1~8 只增不减)、SPI 声明 `MatchModeProvider#requiredApiVersion()`(默认 1)、消费方 `onEnable` 首行对照检查(`api == null || api.API_VERSION < REQUIRED` → SEVERE + `setEnabled(false)`)。用户裁决该机制退场,原话:「在 api 里面写一个表明 api 版本的字段毫无意义」。
+★v1.1-D7 引入的版本协商机制由三件组成:API 面常量 `HydrokarbsApi.API_VERSION`(1~8 只增不减)、SPI 声明 `MatchModeProvider#requiredApiVersion()`(默认 1)、消费方 `onEnable` 首行对照检查(`api == null || api.API_VERSION < REQUIRED` → SEVERE + `setEnabled(false)`)。用户裁决该机制退场,原话:「在 api 里面写一个表明 api 版本的字段毫无意义」。
 
 机制检视(32 号 §1-D1 的完整论证):
 
@@ -16,7 +16,7 @@
 
 ## 决策
 
-1. **机制四处一体退场**(不留半套):`MiniGameApi.API_VERSION` 常量、`MatchModeProvider#requiredApiVersion()` 默认方法(SPI 面收敛为 `id`/`build` 两法)、框架 `onEnable` 版本输出行、`registerMode` 注册日志的版本字段(保留 id 行——归属簿记与查重诊断仍需)。消费方首行检查收敛为**纯在场检查**(`api == null` → SEVERE + `setEnabled(false)`,拒载不崩服语义保留——框架插件缺席/加载失败仍是真实部署事故)。
+1. **机制四处一体退场**(不留半套):`HydrokarbsApi.API_VERSION` 常量、`MatchModeProvider#requiredApiVersion()` 默认方法(SPI 面收敛为 `id`/`build` 两法)、框架 `onEnable` 版本输出行、`registerMode` 注册日志的版本字段(保留 id 行——归属簿记与查重诊断仍需)。消费方首行检查收敛为**纯在场检查**(`api == null` → SEVERE + `setEnabled(false)`,拒载不崩服语义保留——框架插件缺席/加载失败仍是真实部署事故)。
 2. **按破坏性变更口径处理,经用户裁决不设双轨**(第 5 次,同 ★v1.4/★v1.6/★v1.7/★v1.13 先例):删公共常量与删 SPI 公开默认方法 = 跨 jar 破坏(覆写过 `requiredApiVersion()` 的第三方需重编译)。方法面零变化:17 方法签名一字不动,★19 FROZEN 17 行不动;★44 BASELINE 删 2 行合法重录(背书 = 32 号/ADR-0020)。
 3. **版本数字轴(1~8)随之终结,不再升版**:v1.0~v1.13 的 API_VERSION 沿革转为 CONTEXT「历史术语」表的历史陈述,新代码禁用;兼容性陈述改由版本链文档(README/AGENTS §3)+ 冻结测试 + maven 坐标承载。后续破坏性变更的公告载体 = 修正案 + ADR,不再有运行期数字锚点。
 4. **验收处置**:★46(版本协商真值表)就地废止(编号不删不重排,先例 = ★32/★v1.7);★41 就地注(D7 打点增款退场,跨 jar 注册命题本体不变);★67 就地注(`API_VERSION = 8` 子句转历史陈述);新增 ★70(退场机械自证:全库零命中 + 重录基线 + 消费方在场检查)。14.36 条目就地废止(编号空置不复用)。
@@ -36,6 +36,6 @@
 
 ## 后果
 
-- 正:`MiniGameApi` 无 `API_VERSION` 常量;`MatchModeProvider` = `id`/`build` 两法;框架启动无版本行、注册日志只打 id;消费方首行 = 在场检查;★44 BASELINE 重录(删 2 行);★70 新增、★46 废止(计数 69→70 条,★46 废止行不计有效命题);14.36 废止(编号空置)。
+- 正:`HydrokarbsApi` 无 `API_VERSION` 常量;`MatchModeProvider` = `id`/`build` 两法;框架启动无版本行、注册日志只打 id;消费方首行 = 在场检查;★44 BASELINE 重录(删 2 行);★70 新增、★46 废止(计数 69→70 条,★46 废止行不计有效命题);14.36 废止(编号空置)。
 - 负:旧编译物引用已删成员需重编译(examples/TheirPlugin 已随 v1.14 窗口同步);`TheirPluginGuardsTest` ★46 真值表用例删除(修测理由 = 32 号 §1-D5)。
 - 文档修改点(本裁决同步落盘):`07-公共API.md`(§7.1 契约块/§7.2 冻结行·版本协商行/§7.5 表与示例一);`13-扩展步骤.md`(§13.4 步骤 1 与样例/§13.7/§13.11);`14-陷阱清单.md`(14.36);`16-路线图与验收.md`(★46/★41/★67/★70、§16.2 头注、速查);`CONTEXT.md`(API_VERSION 词条迁历史、MatchModeProvider 词条);`README.md`/`AGENTS.md`(版本链、SHDF 对齐注、§4-10 API 面例外句);`00-假设与体检.md`(v1.14 定位行、§0.5.19);`02-核心概念.md`(★v1.13 注);`12-代码骨架.md`(目录树注、§12.2 骨架退场注)。

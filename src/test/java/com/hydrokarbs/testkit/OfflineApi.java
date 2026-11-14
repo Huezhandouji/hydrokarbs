@@ -8,7 +8,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import com.hydrokarbs.api.MiniGameApiImpl;
+import com.hydrokarbs.api.HydrokarbsApiImpl;
 import com.hydrokarbs.engine.AttributeBag;
 import com.hydrokarbs.engine.EngineTicker;
 import com.hydrokarbs.engine.component.SessionComponentContributionRegistry;
@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * api 集成测试基座(7.5;test 源集):真会话服务(假世界口/直通主线程/镜像挂接)+
  * 真模式注册表 + 真地图目录(★v1.8 起无模板根,造数走 {@link MapTestKit})
  * + ⑨ 汇聚总线 + D14 贡献收录表
- * + 真 {@link MiniGameApiImpl}——★42/★43/★51~★53/★54 的离线端到端底座
+ * + 真 {@link HydrokarbsApiImpl}——★42/★43/★51~★53/★54 的离线端到端底座
  * (镜像 {@code SwitchHarness} 2.3 装配先例;离线零 Bukkit 静态调用)。
  *
  * <p>组装口径:主线程执行器 = 直跑(切换完成点内联,与 SwitchHarness 同款);
@@ -53,7 +53,7 @@ public final class OfflineApi {
     public final SessionComponentContributionRegistry contributions;
     public final SessionServiceImpl service;
     public final EngineTicker ticker;
-    public final MiniGameApiImpl api;
+    public final HydrokarbsApiImpl api;
     /** 服务日志捕获(WARN/SEVERE 断言面;镜像 SwitchHarness)。 */
     public final List<LogRecord> logs = new ArrayList<>();
 
@@ -99,7 +99,7 @@ public final class OfflineApi {
                 .build();
         this.ticker = new EngineTicker(null, service);         // Plugin 位传 null:不 start,直调驱动
         // fallbackModeId 传空读口:与上方 service.fallbackModeId("") 同口径(空 = 无效回退 → SEVERE + 解散)
-        this.api = new MiniGameApiImpl(service, modes, maps, globalEvents,
+        this.api = new HydrokarbsApiImpl(service, modes, maps, globalEvents,
                 contributions, Runnable::run, () -> "");
     }
 

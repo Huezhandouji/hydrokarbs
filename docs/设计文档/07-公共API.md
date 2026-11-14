@@ -1,17 +1,17 @@
-## 7. 对外公共 API:`MiniGameApi`(v2 新增,v3 修订注册面;★v1.6 显式注册收敛;★v1.7 能力标签机制退场;★v1.8 地图声明按路径直交——方法面零变化;★v1.10/28 号(ADR-0016)旧属性袋退场,MapDefinition 三字段定案;★v1.11/29 号(ADR-0017)属性袋纯容器回归,声明词料三件退场;★v1.13/31 号(ADR-0019)缺省去向管线退场——API_VERSION 7→8,MatchModeInfo 快照 9→8 分量;★v1.14/32 号(ADR-0020)API 版本协商机制退场——常量与 SPI 版本声明删除,方法面零变化)
+## 7. 对外公共 API:`HydrokarbsApi`(v2 新增,v3 修订注册面;★v1.6 显式注册收敛;★v1.7 能力标签机制退场;★v1.8 地图声明按路径直交——方法面零变化;★v1.10/28 号(ADR-0016)旧属性袋退场,MapDefinition 三字段定案;★v1.11/29 号(ADR-0017)属性袋纯容器回归,声明词料三件退场;★v1.13/31 号(ADR-0019)缺省去向管线退场——API_VERSION 7→8,MatchModeInfo 快照 9→8 分量;★v1.14/32 号(ADR-0020)API 版本协商机制退场——常量与 SPI 版本声明删除,方法面零变化;★v1.15/33 号(ADR-0021)会话控制句柄 SessionHandle 落地——三法迁句柄,冻结面 17→14)
 
-> HydroKarbs MiniGame Framework · v1.14(2026-11-06,修正案 32 号/ADR-0020:API 版本协商机制退场;v1.13 于 2026-10-30 修正案 31 号/ADR-0019:会话模式实例不变式与缺省切换管线退场;v1.12 于 2026-10-29 修正案 30 号:JoinDecision 二值化与 SPECTATE 退场——本篇零改动;v1.11 于 2026-10-28 修正案 29 号/ADR-0017:属性袋纯容器回归与声明词料三件退场;v1.10 于 2026-10-28 修正案 28 号/ADR-0016:旧属性袋退场与 MapDefinition 三字段定案;v1.8 于 2026-10-28 修正案 26 号;v1.7 于 2026-10-28 能力标签机制退场,25 号;v1.6 于 2026-10-27 显式注册收敛,24 号;v1.5 于 2026-10-27 REUSE_DIRTY 副本随会话解散销毁,23 号——公共面零改动;v1.4 于 2026-10-27 API 面收敛与地图注册通道收敛,22 号;v1.3 于 2026-10-25 框架基础设施瘦身与配置中立化,21 号;v1.2 于 2026-10-23 地图注册通道;v1.1 于 2026-10-23 框架独立插件化拆分与 API 面扩充;v1.0 于 2026-10-22 自 SHDFMatch 设计案 v4.1 剥离玩法重构;玩法实现见 Shdf具体玩法设计案/)
+> HydroKarbs MiniGame Framework · v1.16(2026-11-12,修正案 34 号:玩家域单口 leaveSession(UUID)(boolean 收口)回归公共面,冻结面 14→15;v1.15 于 2026-11-11,修正案 33 号/ADR-0021:会话控制句柄 SessionHandle 落地;v1.14 于 2026-11-06 修正案 32 号/ADR-0020:API 版本协商机制退场;v1.13 于 2026-10-30 修正案 31 号/ADR-0019:会话模式实例不变式与缺省切换管线退场;v1.12 于 2026-10-29 修正案 30 号:JoinDecision 二值化与 SPECTATE 退场——本篇零改动;v1.11 于 2026-10-28 修正案 29 号/ADR-0017:属性袋纯容器回归与声明词料三件退场;v1.10 于 2026-10-28 修正案 28 号/ADR-0016:旧属性袋退场与 MapDefinition 三字段定案;v1.8 于 2026-10-28 修正案 26 号;v1.7 于 2026-10-28 能力标签机制退场,25 号;v1.6 于 2026-10-27 显式注册收敛,24 号;v1.5 于 2026-10-27 REUSE_DIRTY 副本随会话解散销毁,23 号——公共面零改动;v1.4 于 2026-10-27 API 面收敛与地图注册通道收敛,22 号;v1.3 于 2026-10-25 框架基础设施瘦身与配置中立化,21 号;v1.2 于 2026-10-23 地图注册通道;v1.1 于 2026-10-23 框架独立插件化拆分与 API 面扩充;v1.0 于 2026-10-22 自 SHDFMatch 设计案 v4.1 剥离玩法重构;玩法实现见 Shdf具体玩法设计案/)
 >
-> 文档版本:v1.14(修正案 32 号/ADR-0020,2026-11-06,**API 版本协商机制退场**——§7.1 契约块删 `int API_VERSION = 8;` 行与 D7 版本协商 javadoc、版本数字轴改历史框架注;§7.2 冻结行补 ★v1.14(BASELINE 删 2 行合法重录)、值对象行 v1.13 重编译句改「按 v1.13 面重编译」、**版本协商行整行改历史口径(退场)**;§7.5 表「版本」行改在场检查口径、示例一版本检查改 api 在场检查;修正案 32 号(ADR-0020)为授权与落盘凭据);v1.13(修正案 31 号/ADR-0019,2026-10-30,**会话模式实例不变式与缺省切换管线退场**——§7.1 契约块 API_VERSION 7→**8**、方法面零变化(17 方法不动,以现行 `MiniGameApi.java` 实签转写);`MatchModeMeta` 缺省去向分量与嵌套枚举 `DefaultTransition` 退场,快照 `MatchModeInfo` 删第九分量(9→8 分量),`MiniGameApiImpl#toModeInfo` 同步;§7.1 示例一版本数字随改;§7.2 冻结行(FROZEN 17 行不动、WHITELIST/BASELINE 合法重录)、值对象行(MatchModeInfo 八分量)、版本协商行(v1.13 = 8;经用户裁决不设双轨——第 4 次)随改;修正案 31 号(ADR-0019)为授权与落盘凭据);v1.11(修正案 29 号/ADR-0017,2026-10-28,**属性袋纯容器回归与声明词料三件退场**——§7.1 契约块 API_VERSION 维持 7、方法面零变化(17 方法不动,以现行 `MiniGameApi.java` 实签转写);`MapDefinition` 第三分量改为 `AttributeBag` 纯容器 + `TAGS` 约定键 + `tags()` 唯一标签读口;`Object metadata`/原标签提取接口/原标签门面三件删除;registerMap 契约行改「词料容器构造即冻结、非空」;§7.2 冻结行/值对象行/版本协商行与 §7.5 地图行随改;修正案 29 号(ADR-0017)为授权与落盘凭据);v1.10(修正案 28 号/ADR-0016,2026-10-28,**属性袋退场,MapDefinition 三字段定案**——§7.1 契约块 API_VERSION 维持 7、方法面零变化(17 方法不动,以现行 `MiniGameApi.java` 实签转写);MapDefinition 形状行按现行实签重录为 `(worldDirectoryPath, ResetStrategy resetStrategy, Object metadata)` + 二参便利构造缺省 `REUSE_DIRTY`;原标签门面收为 `tags(Object)` 读口 + 单方法标签提取约定(约定键/写口/冻结两口随旧属性袋退场);registerMap 契约行去「metaAttributes 构造期冻结」句,改「metadata 按引用存储、视为冻结」;§7.2 冻结行/值对象行/版本协商行与 §7.5 地图行随改;修正案 28 号(ADR-0016)为授权与落盘凭据);v1.8(2026-10-28,修正案 26 号:**地图声明按路径直交 + MapDefinition 瘦身**——§7.1 契约块 API_VERSION 6→7、方法面零变化(17 方法不动,以现行 `MiniGameApi.java` 实签转写);registerMap 契约行按新语义重写(id = 声明目录名路径派生/世界目录存在性直验声明自带路径、模板根约定退场/声明 bag 冻结脱钩);§7.1 第二代码块增 MapDefinition 两分量形状行与约定键注(按现行实签转写);§7.2 冻结行与值对象行加 ★v1.8 注(FROZEN 行不动、BASELINE 重录:MapInfo 收缩为 id/tags/resetStrategy)、版本协商行版本链随改(v1.8 = 7);§7.5 地图注册行与示例一版本数字随改;v1.7(2026-10-28,修正案 25 号:**能力标签机制退场**——§7.1 接口块升 v6:API_VERSION 5→6、冻结面 19→17 方法(-`registerCapability`/`capabilities` 能力两法,以现行 `MiniGameApi.java` 实签转写),能力标签全链退场为历史口径;§7.2 冻结行计数与版本协商行随改(外部能力 = 会话组件桥接,§7.3 注);§7.3 一句话注桥接新形态;§7.5 能力标签行改历史口径、会话组件贡献行与示例一面版本数字随改、增量薄委托注 capability 项历史口径;v1.6 于 2026-10-27,修正案 24 号:**显式注册收敛**——§7.1 接口块升 v5:API_VERSION 4→5、冻结面 15→19 方法(+`registerMode`/`unregisterMode`/`registerSessionComponents`/`unregisterSessionComponents` 四法,以现行 `MiniGameApi.java` 实签转写),跨插件 ServicesManager 提供方通道退场(`SessionComponentProvider` SPI 接口删除、`ProviderServiceListener` 整体删除、`MatchModeRegistry` 的 ServicesManager 半边退场),注册期双口径合一响亮;§7.2「第三方注册模式」行改显式注册四法口径、SPI 注册行标注历史口径;§7.3 贡献通道一表述改「全局贡献 `registerSessionComponents`」;§7.5 会话定制行与示例一版本数字随改;v1.4 于 2026-10-27,修正案 22 号:API 面收敛与地图注册通道收敛——两参 `createSession(String,String)` 删除,`createSession(SessionRecipe)` 为公共 API 建会话唯一形态,API_VERSION=4、冻结面 16→15(§7.1/§7.2);地图注册收敛为唯一注册通道,文件式装载退场,§7.1/§7.5 措辞随改;§7.1 代码块随施工实况逐行对正——api 侧会话快照定名 `SessionInfo`(阶段 7 README §5,2026-10-25)、stats/top 两方法悬置不在本面(回填裁决 21 §6-Q1);v1.3 于 2026-10-25,框架基础设施瘦身——「查战绩」面随 R1 悬置(§7.1/§7.5 注;API_VERSION 维持 3,方法集不变),白名单反面词表历史口径注(§7.2),21-D1;v1.2 于 2026-10-23 地图注册通道——§7.1 增 registerMap/unregisterMap、API_VERSION=3、§7.5 权限面加行;v1.1 于 2026-10-23 框架独立插件化拆分与 API 面扩充——§7.1 升 v2、§7.2 加三行、§7.3 SPI 未决项由 D14 裁决关闭、新增 §7.5 跨插件消费;v4.1 于 2026-10-21 进程级服务层与 ServiceRegistry;会话级组件层——两级挂载;新增 §7.3、§7.4)。
+> 文档版本:v1.16(修正案 34 号,2026-11-12,**玩家域单口 `leaveSession(UUID)` 回归公共面**——§7.1 契约块控制段新增 `boolean leaveSession(UUID)`(离开原因固定 KICK 立即移除:返回 true 时玩家已不在任何名册;不在任何会话 → false 同步早失败;宽限语义 QUIT 属连接监听管线不在本口)、类注冻结面 14→15、成员操作历史口径注补 v1.16 句;§7.2 冻结行 14→15(FROZEN/BASELINE 各 +1 行,HydrokarbsApiSurfaceTest/ApiSurfaceTest 同步合法重录);§7.5 成员行补本口、示例一 hub 出局行改用本口(顺手归正原文引用的不存在枚举 `LeaveReason.MOVED_OUT`);修正案 34 号为授权与落盘凭据);v1.15(修正案 33 号/ADR-0021,2026-11-11,**会话控制句柄 `SessionHandle` 落地**——§7.1 契约块按现行 `HydrokarbsApi.java` 实签转写:冻结面 17→14 方法(删 `switchMode(String,…)`/`joinSession`/`leaveSession` 三法——迁句柄,`sessionOf`/`session`/`sessions`/`createSession` 四法返回类型改 `SessionHandle`),新增 `SessionHandle` 契约块(五方法 + 逐方法线程契约 + 「不可变定位器」纪律 + 组合式 `SessionInfo` 裁决);§7.2 冻结行 17→14(HydrokarbsApiSurfaceTest FROZEN 3 删 1 重录 + `SessionHandle` 冻结集 5 行、ApiSurfaceTest WHITELIST 增 `SessionHandle.class`/BASELINE 受影响行重录——均 33 号/ADR-0021 合法重录),值对象行补 `SessionHandle` 定位器与 `SessionInfo` 组合式口径;§7.3 会话快照定名行加组合式注;§7.5 权限面表查询/控制/成员三行并到句柄口径、示例一 join/leave 句柄化改写、示例二/三随改;修正案 33 号(ADR-0021)为授权与落盘凭据);v1.14(修正案 32 号/ADR-0020,2026-11-06,**API 版本协商机制退场**——§7.1 契约块删 `int API_VERSION = 8;` 行与 D7 版本协商 javadoc、版本数字轴改历史框架注;§7.2 冻结行补 ★v1.14(BASELINE 删 2 行合法重录)、值对象行 v1.13 重编译句改「按 v1.13 面重编译」、**版本协商行整行改历史口径(退场)**;§7.5 表「版本」行改在场检查口径、示例一版本检查改 api 在场检查;修正案 32 号(ADR-0020)为授权与落盘凭据);v1.13(修正案 31 号/ADR-0019,2026-10-30,**会话模式实例不变式与缺省切换管线退场**——§7.1 契约块 API_VERSION 7→**8**、方法面零变化(17 方法不动,以现行 `HydrokarbsApi.java` 实签转写);`MatchModeMeta` 缺省去向分量与嵌套枚举 `DefaultTransition` 退场,快照 `MatchModeInfo` 删第九分量(9→8 分量),`HydrokarbsApiImpl#toModeInfo` 同步;§7.1 示例一版本数字随改;§7.2 冻结行(FROZEN 17 行不动、WHITELIST/BASELINE 合法重录)、值对象行(MatchModeInfo 八分量)、版本协商行(v1.13 = 8;经用户裁决不设双轨——第 4 次)随改;修正案 31 号(ADR-0019)为授权与落盘凭据);v1.11(修正案 29 号/ADR-0017,2026-10-28,**属性袋纯容器回归与声明词料三件退场**——§7.1 契约块 API_VERSION 维持 7、方法面零变化(17 方法不动,以现行 `HydrokarbsApi.java` 实签转写);`MapDefinition` 第三分量改为 `AttributeBag` 纯容器 + `TAGS` 约定键 + `tags()` 唯一标签读口;`Object metadata`/原标签提取接口/原标签门面三件删除;registerMap 契约行改「词料容器构造即冻结、非空」;§7.2 冻结行/值对象行/版本协商行与 §7.5 地图行随改;修正案 29 号(ADR-0017)为授权与落盘凭据);v1.10(修正案 28 号/ADR-0016,2026-10-28,**属性袋退场,MapDefinition 三字段定案**——§7.1 契约块 API_VERSION 维持 7、方法面零变化(17 方法不动,以现行 `HydrokarbsApi.java` 实签转写);MapDefinition 形状行按现行实签重录为 `(worldDirectoryPath, ResetStrategy resetStrategy, Object metadata)` + 二参便利构造缺省 `REUSE_DIRTY`;原标签门面收为 `tags(Object)` 读口 + 单方法标签提取约定(约定键/写口/冻结两口随旧属性袋退场);registerMap 契约行去「metaAttributes 构造期冻结」句,改「metadata 按引用存储、视为冻结」;§7.2 冻结行/值对象行/版本协商行与 §7.5 地图行随改;修正案 28 号(ADR-0016)为授权与落盘凭据);v1.8(2026-10-28,修正案 26 号:**地图声明按路径直交 + MapDefinition 瘦身**——§7.1 契约块 API_VERSION 6→7、方法面零变化(17 方法不动,以现行 `HydrokarbsApi.java` 实签转写);registerMap 契约行按新语义重写(id = 声明目录名路径派生/世界目录存在性直验声明自带路径、模板根约定退场/声明 bag 冻结脱钩);§7.1 第二代码块增 MapDefinition 两分量形状行与约定键注(按现行实签转写);§7.2 冻结行与值对象行加 ★v1.8 注(FROZEN 行不动、BASELINE 重录:MapInfo 收缩为 id/tags/resetStrategy)、版本协商行版本链随改(v1.8 = 7);§7.5 地图注册行与示例一版本数字随改;v1.7(2026-10-28,修正案 25 号:**能力标签机制退场**——§7.1 接口块升 v6:API_VERSION 5→6、冻结面 19→17 方法(-`registerCapability`/`capabilities` 能力两法,以现行 `HydrokarbsApi.java` 实签转写),能力标签全链退场为历史口径;§7.2 冻结行计数与版本协商行随改(外部能力 = 会话组件桥接,§7.3 注);§7.3 一句话注桥接新形态;§7.5 能力标签行改历史口径、会话组件贡献行与示例一面版本数字随改、增量薄委托注 capability 项历史口径;v1.6 于 2026-10-27,修正案 24 号:**显式注册收敛**——§7.1 接口块升 v5:API_VERSION 4→5、冻结面 15→19 方法(+`registerMode`/`unregisterMode`/`registerSessionComponents`/`unregisterSessionComponents` 四法,以现行 `HydrokarbsApi.java` 实签转写),跨插件 ServicesManager 提供方通道退场(`SessionComponentProvider` SPI 接口删除、`ProviderServiceListener` 整体删除、`MatchModeRegistry` 的 ServicesManager 半边退场),注册期双口径合一响亮;§7.2「第三方注册模式」行改显式注册四法口径、SPI 注册行标注历史口径;§7.3 贡献通道一表述改「全局贡献 `registerSessionComponents`」;§7.5 会话定制行与示例一版本数字随改;v1.4 于 2026-10-27,修正案 22 号:API 面收敛与地图注册通道收敛——两参 `createSession(String,String)` 删除,`createSession(SessionRecipe)` 为公共 API 建会话唯一形态,API_VERSION=4、冻结面 16→15(§7.1/§7.2);地图注册收敛为唯一注册通道,文件式装载退场,§7.1/§7.5 措辞随改;§7.1 代码块随施工实况逐行对正——api 侧会话快照定名 `SessionInfo`(阶段 7 README §5,2026-10-25)、stats/top 两方法悬置不在本面(回填裁决 21 §6-Q1);v1.3 于 2026-10-25,框架基础设施瘦身——「查战绩」面随 R1 悬置(§7.1/§7.5 注;API_VERSION 维持 3,方法集不变),白名单反面词表历史口径注(§7.2),21-D1;v1.2 于 2026-10-23 地图注册通道——§7.1 增 registerMap/unregisterMap、API_VERSION=3、§7.5 权限面加行;v1.1 于 2026-10-23 框架独立插件化拆分与 API 面扩充——§7.1 升 v2、§7.2 加三行、§7.3 SPI 未决项由 D14 裁决关闭、新增 §7.5 跨插件消费;v4.1 于 2026-10-21 进程级服务层与 ServiceRegistry;会话级组件层——两级挂载;新增 §7.3、§7.4)。
 
 框架化的最后一块拼图:本框架**自己也要作为一个平台**被别的插件消费——与它消费任一宿主服务的 ServicesManager 是同一机制。同一套纪律,换个方向(框架自身消费宿主服务的实例属 SHDF 扩展线,见 Shdf具体玩法设计案/)。
 
-### 7.1 接口(小而深;方法集冻结;★v1.1:v2 增量,只增不改;★v1.2:v3 增量;★v1.4:v4 收敛——两参 createSession 删除,冻结面 16→15;★v1.6:v5 增量——四法显式注册,冻结面 15→19,ServicesManager 提供方通道退场;★v1.7:v6 收敛——能力标签两法删除,冻结面 19→17,外部能力 = 会话组件桥接;★v1.8:v7——方法面零变化,地图声明按路径直交;★v1.11:v7 维持——第三分量 = `AttributeBag` 纯容器,标签读口 = `tags()`;★v1.13:v8——方法面零变化,缺省去向管线退场,`MatchModeInfo` 9→8 分量;★v1.14:API_VERSION 常量与版本协商面退场,方法面维持 17 法)
+### 7.1 接口(小而深;方法集冻结;★v1.1:v2 增量,只增不改;★v1.2:v3 增量;★v1.4:v4 收敛——两参 createSession 删除,冻结面 16→15;★v1.6:v5 增量——四法显式注册,冻结面 15→19,ServicesManager 提供方通道退场;★v1.7:v6 收敛——能力标签两法删除,冻结面 19→17,外部能力 = 会话组件桥接;★v1.8:v7——方法面零变化,地图声明按路径直交;★v1.11:v7 维持——第三分量 = `AttributeBag` 纯容器,标签读口 = `tags()`;★v1.13:v8——方法面零变化,缺省去向管线退场,`MatchModeInfo` 9→8 分量;★v1.14:API_VERSION 常量与版本协商面退场,方法面维持 17 法;★v1.15:v9 收敛——`switchMode(String,…)`/`joinSession`/`leaveSession` 三法迁 `SessionHandle`,查询/建会话四法改产句柄,冻结面 17→14(33 号/ADR-0021);★v1.16:v10 增量——玩家域单口 `leaveSession(UUID)`(boolean 收口,KICK 立即移除)回归本接口,冻结面 14→15(34 号))
 
 ```java
 package com.hydrokarbs.api;
 
-/** 本框架的对外公共面。经 Bukkit ServicesManager 暴露(MiniGameApi 自身的注册
+/** 本框架的对外公共面。经 Bukkit ServicesManager 暴露(HydrokarbsApi 自身的注册
  *  仍是 ServicesManager;★v1.6:第三方经本面的注册/贡献**不再走 ServicesManager
  *  提供方通道**——模式/会话组件改经本面四法显式注册,24 号)。
  *  ★v1.14(32 号):API 版本协商面退场——API_VERSION 常量与 MatchModeProvider
@@ -26,7 +26,7 @@ package com.hydrokarbs.api;
  *  标签机制(注册表/A2 校验/模式与快照分量)删除;外部能力改由会话组件桥接表达
  *  (§7.3 注);冻结面 19 → 17 方法 = 查询 3 + 控制 1 + 建会话 1 + 成员 2 +
  *  订阅 1 + 地图 2 + 模式显式注册 2 + 会话组件显式注册 2 + 目录 3;「只增不改」
- *  由 17 方法清单续行守卫(★44 ApiSurfaceTest / MiniGameApiSurfaceTest 反射冻结,
+ *  由 17 方法清单续行守卫(★44 ApiSurfaceTest / HydrokarbsApiSurfaceTest 反射冻结,
  *  FROZEN 17 行、BASELINE 随本裁决合法重录)。
  *  ★v1.8(26 号)= 7:地图声明按路径直交 + MapDefinition 瘦身——方法面零变化
  *  (17 方法签名一字不动);「模板寄居框架数据目录 maps/templates/」约定退场,
@@ -42,33 +42,60 @@ package com.hydrokarbs.api;
  *  (默认 = 出厂空模式兜底)。方法面零变化;删公共快照分量 = 跨 jar 破坏
  *  (与删公共方法同构),版本常量升以锚定;经用户裁决不设双轨过渡期
  *  (第 4 次,同 ★v1.4/★v1.6/★v1.7 先例);WHITELIST/BASELINE 随分量删除合法重录。
- *  线程契约:除 switchMode(任意线程发起,Impl 内部回主线程,future 主线程完成,
- *  §14.1)与订阅回调(事件发布线程)外,各方法均主线程调用(§10.5)。 */
-public interface MiniGameApi {
+ *  ★v1.15/33 号(ADR-0021,2026-11-11):会话控制句柄 SessionHandle 落地——
+ *  switchMode(sessionId,…)/joinSession/leaveSession 三法迁句柄,sessionOf/
+ *  session/sessions/createSession 四法改产句柄(冻结面合法重录,§7.2);冻结面
+ *  17 → 14 方法 = 查询 3 + 控制 1(建会话)+ 订阅 1 + 地图 2 + 模式显式注册 2 +
+ *  会话组件显式注册 2 + 目录 3;「id 不存在」自 future 内 Rejected 前移为解析点
+ *  Optional.empty()(同步早失败,33 号明写);控制面以句柄承载,本接口只留解析口。
+ *  ★v1.16(34 号):玩家域单口 leaveSession(UUID) 以 boolean 收口回归本接口——
+ *  免解析的「按玩家移出现属会话」便利口(离开原因固定 KICK 立即移除,不在任何
+ *  会话 → false);会话域控制仍归句柄不变。冻结面 14 → 15 方法。
+ *  线程契约:各方法均主线程调用(§10.5;句柄方法的逐方法线程契约见 SessionHandle
+ *  ——其 switchMode 任意线程发起,Impl 内部回主线程,future 主线程完成,§14.1);
+ *  订阅回调发生在事件发布线程(会话事件发布在主线程)。 */
+public interface HydrokarbsApi {
 
-    // ── 查询(不可变快照;现取不缓存,14.31) ─────────────────
-    //    api 侧快照 record 定名 SessionInfo(与 MatchModeInfo/MapInfo 命名对齐;
-    //    阶段 7 README §5 定名裁决,2026-10-25——原骨架名 SessionView 让位
-    //    engine/port/SessionView,消歧见 §7.3)。
-    Optional<SessionInfo> sessionOf(UUID player);
-    Optional<SessionInfo> session(String sessionId);
-    List<SessionInfo> sessions();
+    // ── 查询(会话句柄解析口;现取不缓存,14.31 同款纪律的延伸) ──
+    //    ★v1.15/33 号:查询不再产 SessionInfo 快照,改产 SessionHandle(控制与
+    //    信息面载体;快照经句柄 info() 现取)。api 侧快照 record 定名 SessionInfo
+    //    的沿革(与 MatchModeInfo/MapInfo 命名对齐;阶段 7 README §5 定名裁决,
+    //    2026-10-25——原骨架名 SessionView 让位 engine/port/SessionView)见 §7.3。
+    /** 玩家 → 所属会话句柄(名册查询);未入任何会话 → empty。主线程调用。 */
+    Optional<SessionHandle> sessionOf(UUID player);
+    /** 按会话 id 解析句柄(只读查询);不存在 → empty(★v1.15 语义迁移:同步早失败)。主线程调用。 */
+    Optional<SessionHandle> session(String sessionId);
+    /** 全部存活会话句柄(引擎遍历序);空表合法(零会话起服为合法状态,§3.6)。主线程调用。 */
+    List<SessionHandle> sessions();
 
-    // ── 控制(与 /sm 命令同权) ────────────────────────────────
-    /** 切换某会话的模式。就是 SessionService#switchMode 的受控暴露(§3.2)。 */
-    CompletableFuture<SwitchResult> switchMode(String sessionId, MatchModeSelection target, Handoff payload);
+    // ── 控制(与 /sm 命令同权;★v1.15/33 号:switchMode 迁 SessionHandle) ──
     /** 创建会话(★v1.1-D14 通道二:会话配方,单次贡献会话组件),见 §7.5。
      *  ★v1.4(22 号):本方法是公共 API 建会话的唯一形态——两参重载已删除,
      *  调用方迁移 SessionRecipe 形态(等价空贡献 = SessionRecipe.of(modeId, mapId))。
      *  失败语义(§7.3):initialModeId 未注册 / 组件 id 查重冲突 / 缺必需依赖
-     *  → 响亮抛,会话不创建、不留半装配态(与既有会话创建语义一致)。主线程调用。 */
-    SessionInfo createSession(SessionRecipe recipe);
+     *  → 响亮抛,会话不创建、不留半装配态(与既有会话创建语义一致;抛时句柄
+     *  不存在,响亮失败语义不变)。★v1.15/33 号:成功返回新会话句柄(原快照
+     *  返回改句柄;快照经 handle.info() 现取)。主线程调用。 */
+    SessionHandle createSession(SessionRecipe recipe);
 
-    // ── 成员操作(★v1.1-D2;★42) ────────────────────────────
-    /** 将玩家加入会话(= SessionService#join 的受控暴露,§3.2;含 JoinAdmission 裁决)。主线程调用。 */
-    JoinResult joinSession(String sessionId, UUID player);
-    /** 将玩家移出其当前会话;不在任何会话 = no-op(幂等)。主线程调用。 */
-    void leaveSession(UUID player, LeaveReason reason);
+    /** 按玩家移出其现属会话(★v1.16/34 号:玩家域单口,boolean 收口):解析玩家
+     *  现属会话后委托 SessionService#leave——立即移除语义(离开原因固定 KICK:
+     *  返回 true 时玩家已不在任何名册;断线宽限语义 QUIT 属连接监听管线,不在
+     *  本口)。成功移出 → true;玩家不在任何会话 → false(幂等失败,同步早失败
+     *  口径同 33 号)。主线程调用。 */
+    boolean leaveSession(UUID player);
+
+    // ── 成员操作(★v1.1-D2;★42;★v1.15 已迁句柄) ────────────
+    // ★v1.15(33 号):原 joinSession(String, UUID) / leaveSession(UUID, LeaveReason)
+    //   两法随会话控制句柄落地迁 SessionHandle#join / SessionHandle#leave(冻结面
+    //   合法重录,§7.2)——语义随迁:join = SessionService#join 的受控暴露(含
+    //   JoinAdmission 裁决,引擎既有裁决原样透传);leave 收窄为会话域守卫(仅当
+    //   玩家现属会话 == 本句柄会话才移出,否则 no-op;不在任何会话 = no-op 幂等,
+    //   D2 语义保留;33 号裁决二:外部迁移代价不作为考量)。此段为历史口径注,
+    //   不再构成可调用的公共面方法。
+    // ★v1.16(34 号):上方 leaveSession(UUID) 为玩家域单口的新增增量——非 33 号
+    //   两法的回迁(会话域 join/leave 仍居句柄);差别:本口免解析、按玩家全局
+    //   定位现属会话,boolean 收口(KICK 立即移除 / 不在册 false)。
 
     // ── 会话事件订阅(★v1.1-D3;★43) ─────────────────────────
     /** 订阅会话事件(八事件快照族,§3.1/D3)。返回句柄,close() 注销;订阅者异常被隔离(镜像总线既有隔离)。 */
@@ -172,10 +199,44 @@ public sealed interface SessionEventView {
 // api/EventSubscription —— ★v1.1-D3:订阅句柄(close() 注销;句柄只在插件实例字段中持有,onDisable 显式 close,14.38)
 public interface EventSubscription extends AutoCloseable { @Override void close(); }
 
+// api/SessionHandle —— ★v1.15/33 号(ADR-0021,2026-11-11):会话控制句柄——单个
+//   会话的控制与信息面。不可变定位器:只持会话 id 与委托(SessionService/
+//   mainExecutor),不持活 Session/名册/实例引用,每次操作现解析(「现取不缓存」
+//   纪律向控制面的延伸,14.31 同款);会话消亡后句柄不失效为错误,走各方法注记的
+//   失效语义。经 HydrokarbsApi#sessionOf/session/sessions/createSession 解析获得。
+//   组合式 SessionInfo(33 号裁决一):快照 record 原样保留(冻结行不动),句柄上
+//   唯一信息口 info()——不把快照分量复制成句柄方法(一份不写两处)。
+//   实现 SessionHandleImpl 包私有 final,构造注入(SessionId, SessionService,
+//   Executor mainExecutor);会话快照转换 snapshot 静态单点居句柄 Impl,与
+//   HydrokarbsApiImpl 共享一份。线程契约:除 switchMode 外均主线程调用(同步返回,
+//   结构非线程安全);switchMode 任意线程发起、Impl 回主线程、future 主线程完成
+//   ——回调里做玩家操作请自行再回主线程。
+public interface SessionHandle {
+    /** 本句柄定位的会话 id(纯值,会话消亡后仍可读)。 */
+    String sessionId();
+    /** 现取会话快照;会话已消亡 → empty。快照即 SessionInfo record(members 含
+     *  宽限期成员、无实例时 modeId/mapId 空串)。主线程调用。 */
+    Optional<SessionInfo> info();
+    /** 将玩家加入本会话——SessionService#join 的受控暴露(§3.2;含 JoinAdmission
+     *  裁决)。引擎既有裁决原样透传:会话不存在(已消亡)/正在解散/入场裁决拒绝
+     *  → JoinResult.Rejected(detail 人读);成员已在册 → 幂等重入(§3.2)。主线程调用。 */
+    JoinResult join(UUID player);
+    /** 将玩家移出本会话——会话域守卫(33 号裁决二):仅当玩家现属会话 == 本句柄
+     *  会话才委托 SessionService#leave,否则 no-op;主线程内查后调,无竞态。玩家
+     *  不在任何会话 = no-op(幂等,D2)。reason 决定离开语义(QUIT = 断线宽限在册 /
+     *  KICK = 立即移除,§3.2)。主线程调用。 */
+    void leave(UUID player, LeaveReason reason);
+    /** 切换本会话的模式——SessionService#switchMode 的受控暴露(§3.2)。失败语义:
+     *  会话已消亡 → future 完成 Rejected(MODE_NOT_FOUND)(detail 点名会话 id);
+     *  其余拒绝经引擎回退管线原样透传;null target → future 异常完成;future 永不
+     *  悬挂(§3.2)。任意线程发起,Impl 回主线程、future 在主线程完成(§14.1)。 */
+    CompletableFuture<SwitchResult> switchMode(MatchModeSelection target, Handoff payload);
+}
+
 // api/SessionComponentProvider —— ★v1.6(24 号):【已删除】——原 ★v1.1-D14 通道一
 //  的全局默认贡献 SPI(经 ServicesManager 注册、ServiceRegisterEvent 收录、坏
 //  provider SEVERE 拒收录会话照常)随显式注册收敛整体退场;全局贡献改经
-//  MiniGameApi#registerSessionComponents(Plugin, specs) 显式注册(干跑合并校验
+//  HydrokarbsApi#registerSessionComponents(Plugin, specs) 显式注册(干跑合并校验
 //  失败响亮上抛给调用方)。此行为历史口径注,不再构成可 import 的公共类型。
 
 // api/SessionRecipe —— ★v1.1-D14 通道二:单次贡献(★v1.4:两参重载已删除,
@@ -210,19 +271,19 @@ public record MapDefinition(Path worldDirectoryPath, ResetStrategy resetStrategy
 // 原标签提取接口与原标签门面 —— 两件均不存在(29 号/ADR-0017 退场)
 ```
 
-> ★v1.1-D3 边界:**实例事件(`MatchModeInstanceEvent`)第一版不经此面暴露**——玩法侧组件经自身实例总线已有全量;跨插件订阅实例事件登记为未决(19-§7-Q5,看板类需求先验证会话快照 + D3 是否够用),不裁。顺序承诺:单会话内事件有序;跨插件订阅者间不承诺送达顺序。`MiniGameApiImpl` 增量实现均为薄委托:`joinSession/leaveSession → SessionService`;`subscribeSessionEvents → 各 Session.events() 聚合 + 会话注册表遍历挂接(新会话创建时自动接入)`;`registerCapability → CapabilityRegistry`(★v1.7 历史口径:该委托随能力两法删除,25 号);**★v1.6 增量(24 号)**:`registerMode/unregisterMode → MatchModeRegistry#registerProvider/unregister`(响应亮闸,归属簿记 `modeClaims` 在 Impl 伴生,镜像原 `capabilityClaims` 先例——该簿记随能力标签机制退场删除,★v1.7);`registerSessionComponents/unregisterSessionComponents → SessionComponentContributionRegistry`(干跑合并校验响亮上抛);**摘除回退编排自原 `ProviderServiceListener` 迁入 Impl**(通道退场,编排逻辑一份不写两处)。
+> ★v1.1-D3 边界:**实例事件(`MatchModeInstanceEvent`)第一版不经此面暴露**——玩法侧组件经自身实例总线已有全量;跨插件订阅实例事件登记为未决(19-§7-Q5,看板类需求先验证会话快照 + D3 是否够用),不裁。顺序承诺:单会话内事件有序;跨插件订阅者间不承诺送达顺序。`HydrokarbsApiImpl` 增量实现均为薄委托:`joinSession/leaveSession → SessionService`(★v1.15/33 号历史口径:该两法已迁 `SessionHandle#join/leave`,委托关系随句柄落位 `SessionHandleImpl`——句柄解析(`sessionOf`/`session`/`sessions`/`createSession` → `SessionHandleImpl`)在 Impl 单点);`subscribeSessionEvents → 各 Session.events() 聚合 + 会话注册表遍历挂接(新会话创建时自动接入)`;`registerCapability → CapabilityRegistry`(★v1.7 历史口径:该委托随能力两法删除,25 号);**★v1.6 增量(24 号)**:`registerMode/unregisterMode → MatchModeRegistry#registerProvider/unregister`(响应亮闸,归属簿记 `modeClaims` 在 Impl 伴生,镜像原 `capabilityClaims` 先例——该簿记随能力标签机制退场删除,★v1.7);`registerSessionComponents/unregisterSessionComponents → SessionComponentContributionRegistry`(干跑合并校验响亮上抛);**摘除回退编排自原 `ProviderServiceListener` 迁入 Impl**(通道退场,编排逻辑一份不写两处)。
 
 ### 7.2 注册、冻结与扩展点
 
 | 事项 | 做法 |
 |---|---|
-| 注册 | `onEnable`:`getServer().getServicesManager().register(MiniGameApi.class, impl, this, ServicePriority.Normal)`——与消费任一宿主服务的 ServicesManager 同一机制,对称 |
-| 冻结 | `MiniGameApiSurfaceTest` 反射冻结方法集(同款"服务面冻结测试"在 SHDF 扩展线的先例 `RoleApiSurfaceTest`,见 Shdf具体玩法设计案/):删/改签名即测试红。**冻结面 17 方法 = 查询 3 + 控制 1 + 建会话 1(`SessionRecipe` 唯一形态)+ 成员 2 + 订阅 1 + 地图 2 + 模式显式注册 2(`registerMode`/`unregisterMode`)+ 会话组件显式注册 2(`registerSessionComponents`/`unregisterSessionComponents`)+ 目录 3**(★v1.4/22 号:16 → 15,两参 `createSession` 删除属破坏性收敛;★v1.6/24 号:15 → 19,四法显式注册——ServicesManager 提供方通道退场,`SessionComponentProvider` SPI 删除属破坏性变更,未设双轨窗口;**★v1.7/25 号:19 → 17,能力标签两法 `registerCapability`/`capabilities` 删除(用户裁决:字符串契约不严谨),外部能力 = 会话组件桥接(§7.3 注);冻结测试方法清单与 API_VERSION 随裁决合法更新,FROZEN 17 行、BASELINE 重录;**★v1.8/26 号:方法面零变化 = FROZEN 17 行不动,但 MapInfo 收缩(id/tags/resetStrategy)、MapDefinition 两分量——BASELINE 合法重录(背书 = 26 号修正案);计数不含悬置的战绩两方法,见 §7.1 注**;**★v1.10/28 号(ADR-0016,2026-10-28):旧词料容器整类退场,再次方法面零变化 = FROZEN 17 行仍不动;BASELINE 再录(删旧容器七行与各端口 `attrs()`/`MatchModeInstanceView#attr()` 行,MapDefinition 三分量行,增原标签提取接口一行);★v1.11/29 号(ADR-0017,2026-10-28):第三分量改 `AttributeBag` 纯容器,方法面仍零变化 = FROZEN 17 行不动;BASELINE 再录(增回 `AttributeBag` 及其 `Key`/`Builder`/`empty`/三读口,删原标签提取接口一行,MapDefinition 第三分量类型改 `AttributeBag`)——背书 = ADR-0017**;★v1.13/31 号(ADR-0019,2026-10-30):缺省去向管线退场——方法面仍零变化 = FROZEN 17 行不动;WHITELIST 删 `DefaultTransition.class`、BASELINE 删 7 行冻结签名(`MatchModeMeta` 三分量构造/访问器族与 `MatchModeInfo` 分量族)后合法重录(背书 = ADR-0019);`API_VERSION` 7→8;★v1.14/32 号(ADR-0020,2026-11-06):API 版本协商面退场——BASELINE 删 `#API_VERSION:int` 与 `#requiredApiVersion():int` 两行后合法重录(背书 = ADR-0020),FROZEN 17 行仍不动** |
-| 值对象 | `SessionInfo` / `MatchModeInfo` / `MapInfo` 全是不可变 record,不泄漏引擎内部可变状态(`SessionInfo` 是快照,不含活实例引用;api 侧原骨架名 `SessionView` 施工定名让位——阶段 7 README §5,2026-10-25,见 §7.3)。**★v1.8/26 号:`MapInfo` 收缩为 `(id, tags, resetStrategy)` 三分量**——id = 声明目录名(路径派生),tags = 声明 `MapDefinition#tags()` 唯一读口(`TAGS` 约定键,缺省空集)、resetStrategy = 声明字段(★v1.11/29 号(ADR-0017):词料容器与标签读口定案;枚举存 `name()`,枚举不进冻结面);原 `displayName`/`world` 分量随 MapDefinition 瘦身删除(声明文件系统路径不进冻结面);**★v1.13/31 号(ADR-0019):`MatchModeInfo` = 八分量 `(id, displayName, description, icon, mapTags, recordsHistory, minParticipants, maxParticipants)`——第九分量 `defaultTransition` 随缺省去向管线退场删除(消费过该分量的旧编译物需按 v1.13 面重编译——API 版本常量已随 ★v1.14 退场)**;MapDefinition 形状行见 §7.1 第二代码块(按现行实签转写) |
-| **第三方注册模式** ★v3;**★v1.6 显式注册口径(24 号)** | 注册面 = **`MiniGameApi#registerMode(Plugin, MatchModeProvider)`**(本面四法之一)——聚合根是 final 类不是接口,Builder 即声明语言,工厂接口即注册载荷;**注册工厂,不是注册成品**(§13.4)。注册闸(build → verifyDependencies → id 查重)**全响亮**:坏声明/重复 id 原样抛给调用方(onEnable 注册失败 = 拒载信号;显式调用方可捕获,原「运行期事件回调不上抛」口径随通道退场);成功返回 `MatchModeInfo` 并进 `modes()` 目录。摘除 = `unregisterMode(Plugin, modeId)`——只准摘自己注册的 id(越权/含本 jar 出厂模式 → 响亮拒;不存在 → 幂等 no-op),摘除后执行**回退编排**:`session.fallback-mode` 已配置且已注册 → force 切换(豁免 min-dwell);否则 `FALLBACK_DISSOLVE` 解散(§13.4/§3.2 二级;回退被拒 WARN 放弃不自旋)。**注册时序反转(★v1.6)**:第三方必须 `depend: [HydroKarbs]`、`load(MiniGameApi)` 检查版本后**在 onEnable 里显式登记**——原「先启补收录」(`ServiceRegisterEvent` 动态收录,兼容先启后注册的时序)随 ServicesManager 提供方通道退役为历史口径(§13.4;`MatchModeRegistry` 的 ServiceLoader 半边——本 jar `META-INF/services` 出厂模式——保留不动)。**别的插件不改我们的 jar 就能加模式**,这是"框架"二字成立的验收标准(同款"装配即校验"纪律的先例 `RoleLoader#loadInto` 属 SHDF 扩展线,见 Shdf具体玩法设计案/) |
+| 注册 | `onEnable`:`getServer().getServicesManager().register(HydrokarbsApi.class, impl, this, ServicePriority.Normal)`——与消费任一宿主服务的 ServicesManager 同一机制,对称 |
+| 冻结 | `HydrokarbsApiSurfaceTest` 反射冻结方法集(同款"服务面冻结测试"在 SHDF 扩展线的先例 `RoleApiSurfaceTest`,见 Shdf具体玩法设计案/):删/改签名即测试红。**冻结面 15 方法 = 查询 3(`sessionOf`/`session`/`sessions`,产 `SessionHandle`)+ 控制 1(建会话 1,`SessionRecipe` 唯一形态,产 `SessionHandle`)+ 成员 1(玩家域移出 `leaveSession`,★v1.16/34 号)+ 订阅 1 + 地图 2 + 模式显式注册 2(`registerMode`/`unregisterMode`)+ 会话组件显式注册 2(`registerSessionComponents`/`unregisterSessionComponents`)+ 目录 3;另有 `SessionHandle` 冻结集 5 法(`sessionId`/`info`/`join`/`leave`/`switchMode`,冻结面镜像,同测试断言)**(★v1.4/22 号:16 → 15,两参 `createSession` 删除属破坏性收敛;★v1.6/24 号:15 → 19,四法显式注册——ServicesManager 提供方通道退场,`SessionComponentProvider` SPI 删除属破坏性变更,未设双轨窗口;**★v1.7/25 号:19 → 17,能力标签两法 `registerCapability`/`capabilities` 删除(用户裁决:字符串契约不严谨),外部能力 = 会话组件桥接(§7.3 注);冻结测试方法清单与 API_VERSION 随裁决合法更新,FROZEN 17 行、BASELINE 重录;**★v1.8/26 号:方法面零变化 = FROZEN 17 行不动,但 MapInfo 收缩(id/tags/resetStrategy)、MapDefinition 两分量——BASELINE 合法重录(背书 = 26 号修正案);计数不含悬置的战绩两方法,见 §7.1 注**;**★v1.10/28 号(ADR-0016,2026-10-28):旧词料容器整类退场,再次方法面零变化 = FROZEN 17 行仍不动;BASELINE 再录(删旧容器七行与各端口 `attrs()`/`MatchModeInstanceView#attr()` 行,MapDefinition 三分量行,增原标签提取接口一行);★v1.11/29 号(ADR-0017,2026-10-28):第三分量改 `AttributeBag` 纯容器,方法面仍零变化 = FROZEN 17 行不动;BASELINE 再录(增回 `AttributeBag` 及其 `Key`/`Builder`/`empty`/三读口,删原标签提取接口一行,MapDefinition 第三分量类型改 `AttributeBag`)——背书 = ADR-0017**;★v1.13/31 号(ADR-0019,2026-10-30):缺省去向管线退场——方法面仍零变化 = FROZEN 17 行不动;WHITELIST 删 `DefaultTransition.class`、BASELINE 删 7 行冻结签名(`MatchModeMeta` 三分量构造/访问器族与 `MatchModeInfo` 分量族)后合法重录(背书 = ADR-0019);`API_VERSION` 7→8;★v1.14/32 号(ADR-0020,2026-11-06):API 版本协商面退场——BASELINE 删 `#API_VERSION:int` 与 `#requiredApiVersion():int` 两行后合法重录(背书 = ADR-0020),FROZEN 17 行仍不动;★v1.15/33 号(ADR-0021,2026-11-11):会话控制句柄落地——**17 → 14**:`switchMode(String,…)`/`joinSession`/`leaveSession` 三法迁 `SessionHandle`(FROZEN 3 行删)、`createSession` 返回类型改句柄(FROZEN 1 行重录;`sessionOf`/`session`/`sessions` 三行泛型擦除面不动、泛型实参 → `SessionHandle`),**新增 `SessionHandle` 冻结集断言(HANDLE_FROZEN 5 行)**;`ApiSurfaceTest` WHITELIST `api/**` 段增 `SessionHandle.class`、BASELINE 重录受影响行(3 行删 + `createSession` 1 行重录 + 句柄公开面 5 行新增;`SessionInfo` 行不动)——背书 = 33 号/ADR-0021;★v1.16/34 号(2026-11-12):玩家域单口 `leaveSession(java.util.UUID):boolean` 增量,冻结面 14 → 15——FROZEN +1 行、BASELINE +1 行(HydrokarbsApiSurfaceTest/ApiSurfaceTest 同步合法重录;KICK 立即移除语义,不在任何会话 → false 同步早失败;背书 = 34 号修正案)** |
+| 值对象 | `SessionInfo` / `MatchModeInfo` / `MapInfo` 全是不可变 record,不泄漏引擎内部可变状态(`SessionInfo` 是快照,不含活实例引用;api 侧原骨架名 `SessionView` 施工定名让位——阶段 7 README §5,2026-10-25,见 §7.3)。**★v1.15/33 号(ADR-0021):`SessionHandle` 是不可变定位器而非值对象快照——只持会话 id 与委托、每次操作现解析(「现取不缓存」向控制面的延伸),冻结以独立冻结集 5 行承载(见上行);`SessionInfo` 组合式(33 号裁决一):record 原样保留(冻结行不动),公共面唯一信息口收敛到 `SessionHandle#info()`——不把快照分量复制成句柄方法(一份不写两处)**。**★v1.8/26 号:`MapInfo` 收缩为 `(id, tags, resetStrategy)` 三分量**——id = 声明目录名(路径派生),tags = 声明 `MapDefinition#tags()` 唯一读口(`TAGS` 约定键,缺省空集)、resetStrategy = 声明字段(★v1.11/29 号(ADR-0017):词料容器与标签读口定案;枚举存 `name()`,枚举不进冻结面);原 `displayName`/`world` 分量随 MapDefinition 瘦身删除(声明文件系统路径不进冻结面);**★v1.13/31 号(ADR-0019):`MatchModeInfo` = 八分量 `(id, displayName, description, icon, mapTags, recordsHistory, minParticipants, maxParticipants)`——第九分量 `defaultTransition` 随缺省去向管线退场删除(消费过该分量的旧编译物需按 v1.13 面重编译——API 版本常量已随 ★v1.14 退场)**;MapDefinition 形状行见 §7.1 第二代码块(按现行实签转写) |
+| **第三方注册模式** ★v3;**★v1.6 显式注册口径(24 号)** | 注册面 = **`HydrokarbsApi#registerMode(Plugin, MatchModeProvider)`**(本面四法之一)——聚合根是 final 类不是接口,Builder 即声明语言,工厂接口即注册载荷;**注册工厂,不是注册成品**(§13.4)。注册闸(build → verifyDependencies → id 查重)**全响亮**:坏声明/重复 id 原样抛给调用方(onEnable 注册失败 = 拒载信号;显式调用方可捕获,原「运行期事件回调不上抛」口径随通道退场);成功返回 `MatchModeInfo` 并进 `modes()` 目录。摘除 = `unregisterMode(Plugin, modeId)`——只准摘自己注册的 id(越权/含本 jar 出厂模式 → 响亮拒;不存在 → 幂等 no-op),摘除后执行**回退编排**:`session.fallback-mode` 已配置且已注册 → force 切换(豁免 min-dwell);否则 `FALLBACK_DISSOLVE` 解散(§13.4/§3.2 二级;回退被拒 WARN 放弃不自旋)。**注册时序反转(★v1.6)**:第三方必须 `depend: [HydroKarbs]`、`load(HydrokarbsApi)` 检查版本后**在 onEnable 里显式登记**——原「先启补收录」(`ServiceRegisterEvent` 动态收录,兼容先启后注册的时序)随 ServicesManager 提供方通道退役为历史口径(§13.4;`MatchModeRegistry` 的 ServiceLoader 半边——本 jar `META-INF/services` 出厂模式——保留不动)。**别的插件不改我们的 jar 就能加模式**,这是"框架"二字成立的验收标准(同款"装配即校验"纪律的先例 `RoleLoader#loadInto` 属 SHDF 扩展线,见 Shdf具体玩法设计案/) |
 | 第三方组件 | 不开放。第三方模式复用我们已发布的 L3 组件(`MatchModeComponent` 基类与 `Specification` 在 api 包导出稳定副本)+ 模式包内自建私有组件 |
-| **API 编译面白名单** ★v1.1(D6) | **不移动引擎类型进 api/**(避免 engine→api 依赖倒挂),改为白名单冻结:玩法/伴随插件 compileOnly 依赖框架 jar 时允许 import 的包集 = `api/**`、`engine.mode/**`、两级组件基类(`MatchModeComponent`/`SessionComponent` + Specification/Factory,不含 Registry)、`engine.session` 值类型(Handoff/EndResult/TransitionIntent/MatchModeSelection/SwitchResult/JoinResult/LeaveReason/SessionId/DissolveReason)、`engine.port` 契约、`engine.event/**`、`component/**` 各包公开数据件与事件类型、`map/` 读面(逐包清单落 7.5 施工文档)。**机械守卫**:`ApiSurfaceTest` 双断言(★44)——①`MiniGameApi` 全部方法签名只引用白名单类型;②白名单内类型的公开签名**只增不改**(反射快照)。**永不导出**(白名单反面,断言显式列出):`SessionService(Impl)`、`EngineTicker`、`WorldPort`、`ServiceRegistry` 族、`ComponentRegistry` 族、`bridge/**`、各 Impl(★v1.3:原反面词 `PersistencePort`/`data/**` 为历史口径——持久化已整体出框架基线,该包不存在、断言空转不减,21-D1)。跨 jar 场景下进程内全权访问特权仅保留给形态 A 的宿主 L0 装配/监听/命令(彩排纪律:形态 A 下宿主代码也应只用白名单 + L0 装配点);玩法插件侧自建 ArchUnit 模板随 7.5 施工文档提供(框架无法跨 jar 强制,review 条款兜底) |
-| **版本协商(★v1.14 历史口径)** | **机制已整体退场(32 号/ADR-0020,2026-11-06)**:`MiniGameApi.API_VERSION` 常量与 `MatchModeProvider#requiredApiVersion()` SPI 声明删除——运行期版本对照是自我比较(三方同源,恰好实现检查的消费方必然刚重编译过,真正的崩点 `NoSuchMethodError` 不经过版本数字),兼容性陈述改由版本链文档(README/AGENTS §3)+ 冻结测试(★19/★44 只增不改)+ maven 坐标承载;框架启动与注册日志无版本字段;消费方 `onEnable` 首行仅查 **api 在场**(`api == null` → SEVERE + `setEnabled(false)`,拒载不崩服语义保留) | 原 D7 沿革(数字轴 1~8,已终结):v1.0 = 1,v1.1 = 2,v1.2 = 3,v1.3 维持 3,v1.4 = 4,v1.6 = 5,v1.7 = 6,v1.8 = 7,v1.13 = 8;One-Version Rule「破坏性升版 + 至多一个次要版本双轨」经五次用户裁决豁免(★v1.4/★v1.6/★v1.7/★v1.13/★v1.14——本次连常量一并退场,该规则的执行载体改归冻结行与修正案流程) |
+| **API 编译面白名单** ★v1.1(D6) | **不移动引擎类型进 api/**(避免 engine→api 依赖倒挂),改为白名单冻结:玩法/伴随插件 compileOnly 依赖框架 jar 时允许 import 的包集 = `api/**`、`engine.mode/**`、两级组件基类(`MatchModeComponent`/`SessionComponent` + Specification/Factory,不含 Registry)、`engine.session` 值类型(Handoff/EndResult/TransitionIntent/MatchModeSelection/SwitchResult/JoinResult/LeaveReason/SessionId/DissolveReason)、`engine.port` 契约、`engine.event/**`、`component/**` 各包公开数据件与事件类型、`map/` 读面(逐包清单落 7.5 施工文档)。**机械守卫**:`ApiSurfaceTest` 双断言(★44)——①`HydrokarbsApi` 全部方法签名只引用白名单类型;②白名单内类型的公开签名**只增不改**(反射快照)。**永不导出**(白名单反面,断言显式列出):`SessionService(Impl)`、`EngineTicker`、`WorldPort`、`ServiceRegistry` 族、`ComponentRegistry` 族、`bridge/**`、各 Impl(★v1.3:原反面词 `PersistencePort`/`data/**` 为历史口径——持久化已整体出框架基线,该包不存在、断言空转不减,21-D1)。跨 jar 场景下进程内全权访问特权仅保留给形态 A 的宿主 L0 装配/监听/命令(彩排纪律:形态 A 下宿主代码也应只用白名单 + L0 装配点);玩法插件侧自建 ArchUnit 模板随 7.5 施工文档提供(框架无法跨 jar 强制,review 条款兜底) |
+| **版本协商(★v1.14 历史口径)** | **机制已整体退场(32 号/ADR-0020,2026-11-06)**:`HydrokarbsApi.API_VERSION` 常量与 `MatchModeProvider#requiredApiVersion()` SPI 声明删除——运行期版本对照是自我比较(三方同源,恰好实现检查的消费方必然刚重编译过,真正的崩点 `NoSuchMethodError` 不经过版本数字),兼容性陈述改由版本链文档(README/AGENTS §3)+ 冻结测试(★19/★44 只增不改)+ maven 坐标承载;框架启动与注册日志无版本字段;消费方 `onEnable` 首行仅查 **api 在场**(`api == null` → SEVERE + `setEnabled(false)`,拒载不崩服语义保留) | 原 D7 沿革(数字轴 1~8,已终结):v1.0 = 1,v1.1 = 2,v1.2 = 3,v1.3 维持 3,v1.4 = 4,v1.6 = 5,v1.7 = 6,v1.8 = 7,v1.13 = 8;One-Version Rule「破坏性升版 + 至多一个次要版本双轨」经五次用户裁决豁免(★v1.4/★v1.6/★v1.7/★v1.13/★v1.14——本次连常量一并退场,该规则的执行载体改归冻结行与修正案流程) |
 | **禁 shade** ★v1.1(D7/14.35) | 玩法/伴随插件 **compileOnly** 依赖框架 jar + 运行期 `depend: [HydroKarbs]`;构建脚本断言消费方 jar 内不得出现 `com.hydrokarbs.` 前缀类(消费方各用自有包根,宿主 = `com.shdf.*`)——shade 框架类会导致双引擎/ClassCastException/模式注册进错误注册表 |
 
 > 为什么把模式注册放行给第三方、而组件不放行:模式是**声明级**扩展(Builder 拼数据,风险面小——坏声明在 `verifyDependencies`/`checkMap` 就被拒);组件会挂进我们的 tick 循环,坏组件能拖垮 TPS。先开放前者,后者等有真实需求再加(Assumption-driven,不做 hypothetical seam)。
@@ -234,12 +295,12 @@ v4.0 引入**会话级组件**(`SessionComponent`:每会话一份、跨模式切
 
 | 事项 | v4.0 边界 |
 |---|---|
-| `MiniGameApi` 冻结面 | **第一版不进 `MiniGameApi` 冻结面**:不新增任何会话级组件相关的方法;装配来源、派发节拍、故障隔离都由引擎/L0 持有——会话级组件不是对外契约,§7.1 方法集与 §7.2 的冻结纪律原样有效(**★v1.1 修订**:本行"不新增会话级组件相关方法"由 19-D14 受限突破——新增的是 `createSession(SessionRecipe)` 重载与 `SessionComponentProvider` 注册面,仍走"只增不改";**★v1.6(24 号)**:原 `SessionComponentProvider` 注册面已删除,全局贡献改经 `registerSessionComponents`/`unregisterSessionComponents` 两法进冻结面——见下行 SPI 行) |
-| 会话快照定名与消歧 | **api 侧定名 `SessionInfo`**(施工定名,阶段 7 README §5,2026-10-25:原骨架名 `SessionView` 让位,与 `MatchModeInfo`/`MapInfo` 命名对齐):`api/view/SessionInfo`(不可变 record 快照,§7.1/§7.2 冻结面)与 `engine/port/SessionView`(★v4.0 实例侧只读会话视图**接口**,§12.2)不再同名——公共面只暴露前者,引擎契约不属 `api/`;两者不得混用。★v1.1:api/ 新增的 `SessionEventView` 是会话事件快照族,与两者均不同义 |
+| `HydrokarbsApi` 冻结面 | **第一版不进 `HydrokarbsApi` 冻结面**:不新增任何会话级组件相关的方法;装配来源、派发节拍、故障隔离都由引擎/L0 持有——会话级组件不是对外契约,§7.1 方法集与 §7.2 的冻结纪律原样有效(**★v1.1 修订**:本行"不新增会话级组件相关方法"由 19-D14 受限突破——新增的是 `createSession(SessionRecipe)` 重载与 `SessionComponentProvider` 注册面,仍走"只增不改";**★v1.6(24 号)**:原 `SessionComponentProvider` 注册面已删除,全局贡献改经 `registerSessionComponents`/`unregisterSessionComponents` 两法进冻结面——见下行 SPI 行) |
+| 会话快照定名与消歧 | **api 侧定名 `SessionInfo`**(施工定名,阶段 7 README §5,2026-10-25:原骨架名 `SessionView` 让位,与 `MatchModeInfo`/`MapInfo` 命名对齐):`api/view/SessionInfo`(不可变 record 快照,§7.1/§7.2 冻结面)与 `engine/port/SessionView`(★v4.0 实例侧只读会话视图**接口**,§12.2)不再同名——公共面只暴露前者,引擎契约不属 `api/`;两者不得混用。★v1.1:api/ 新增的 `SessionEventView` 是会话事件快照族,与两者均不同义。**★v1.15/33 号(ADR-0021):`SessionInfo` 组合式——record 原样保留(冻结行不动),公共面唯一信息口收敛到 `SessionHandle#info()`(查询/建会话四法改产句柄,§7.1)** |
 | 第三方会话组件 SPI | **未决项已裁决关闭(★v1.1 修正案 19-D14,修订原"第一版不开放")→ 受限开放;★v1.6(24 号)贡献通道一改显式注册**——插件(宿主/伴随)经两条通道贡献会话组件:①全局贡献 **`registerSessionComponents(Plugin, specs)`**(显式注册,本面四法之一;干跑合并校验(查重/依赖)失败**响亮上抛**给调用方——注册闸只有一份;同一提供方重复注册 = 幂等重收录;摘除 = `unregisterSessionComponents(Plugin)`,幂等 no-op);②单次 `createSession(SessionRecipe)` 携带 `extraComponents`(查重/缺依赖 → 响亮失败)。合并序 = 宿主组装的 spec.sessionComponents → **已收录贡献(`registerSessionComponents` 注册序)** → recipe;**模式仍无权贡献(v4-D4 不变)、无运行期增删**(贡献只发生在会话创建时,装配点唯一不变)。原 `SessionComponentProvider` SPI(经 ServicesManager 注册、`ServiceRegisterEvent` 收录、坏 provider SEVERE 拒收录会话照常)为 **★v1.6 前历史口径**——接口已删除(见 §7.1 第二代码块注)。防线 = 注册期干跑校验 + 装配期 verifyDependencies + 运行期 quarantine(★30)+ 预算告警(D9-③ 扩至会话组件)。原未决项(17 §11-Q2)就此关闭;**第三方查询会话组件实例维持不开放**(下行) |
 | 第三方查询会话组件 | **未决维持**:第三方经 API 查询会话组件实例——第一版明确不进;日后若开放,仍走 §7.2"只增不改"的冻结纪律(19-§7 未决项随 D14 登记口径) |
 | 实例组件订阅会话事件 | **未决(变更指示 §11-Q7;19-§7-Q2 维持不开放)**:第一版**不开放**——`SessionInfo` 不提供 `events()`(实例组件不得订阅会话事件,§3.8/§12.2);登记去向:本节与 11(§11.4 注),待裁决 |
-| `SessionService` 公开方法签名 | **不变**:v4.0 只在其内部扩展**装配/派发/回收接线**(装配在 `create` 内、先于首个实例;派发在 `tickAll` ③ 步;回收在 `dissolve` 逆序 `stop` + 登记资源回收)——**装配/派发/回收接线扩展不改变公共面**:公开方法签名不变(§3.2),`switchMode` 的受控暴露(§7.1)与实现类的薄委托关系(§7.2)都不受影响 |
+| `SessionService` 公开方法签名 | **不变**:v4.0 只在其内部扩展**装配/派发/回收接线**(装配在 `create` 内、先于首个实例;派发在 `tickAll` ③ 步;回收在 `dissolve` 逆序 `stop` + 登记资源回收)——**装配/派发/回收接线扩展不改变公共面**:公开方法签名不变(§3.2),`switchMode` 的受控暴露(§7.1)与实现类的薄委托关系(§7.2)都不受影响(★v1.15/33 号:受控暴露口自 `HydrokarbsApi` 方法迁 `SessionHandle`(§7.1),`SessionService` 公开面与引擎/命令/监听调用路径零改动——本行结论不变) |
 
 > 一句话:v4.0 的插拔发生在**引擎内部**;公共 API 的消费者(别的插件)在 v4.0 里既不能查询会话组件,也不能提供会话组件。**★v1.1 裁决(D14)**:后半句已突破——插件(宿主/伴随)可经两条通道**提供**会话组件(模式仍不可,无运行期增删);**查询**会话组件实例维持不开放(未决)。**★v1.6(24 号)**:全局通道的注册面改显式——`registerSessionComponents`(全局贡献)+ `SessionRecipe`(单次);原 `SessionComponentProvider` SPI 随 ServicesManager 提供方通道退场删除。**★v1.7(25 号)**:能力标签机制退场后,本节两通道即**外部能力的新形态**——外部插件贡献**类型化桥接会话组件**(如角色/经济适配组件)进会话,消费方组件以 `requires`/`requiresOptional` 类型化声明依赖:硬依赖缺失在**装配期响亮**(干跑合并校验/createSession 拒绝),运行期降级/quarantine 由桥接组件自身承接(D14 既有口径;provider 摘除只影响后续会话);软依赖由 `requiresOptional` 独自承载(★21/★60)。
 
@@ -249,24 +310,24 @@ v4.1 引入**进程级服务**(Service:进程生命周期,`onEnable` 装配 → 
 
 | 事项 | v4.1 边界 |
 |---|---|
-| `MiniGameApi` 冻结面 | **第一版不进 `MiniGameApi` 冻结面**:服务、`ServiceRegistry`、服务查询一律**不进公共面**(修正案 D9)——不新增任何方法;§7.1 方法集与 §7.2 的冻结纪律原样有效,`MiniGameApiSurfaceTest` 现有断言即守卫 |
-| 第三方消费服务 | **未决(修正案 §12-Q9)**:`MiniGameApi` 是否暴露服务查询/进程级快照——第一版明确**不进**;登记去向:本节(07 §7.4);日后若开放,仍走 §7.2"只增不改"的冻结纪律 |
+| `HydrokarbsApi` 冻结面 | **第一版不进 `HydrokarbsApi` 冻结面**:服务、`ServiceRegistry`、服务查询一律**不进公共面**(修正案 D9)——不新增任何方法;§7.1 方法集与 §7.2 的冻结纪律原样有效,`HydrokarbsApiSurfaceTest` 现有断言即守卫 |
+| 第三方消费服务 | **未决(修正案 §12-Q9)**:`HydrokarbsApi` 是否暴露服务查询/进程级快照——第一版明确**不进**;登记去向:本节(07 §7.4);日后若开放,仍走 §7.2"只增不改"的冻结纪律 |
 | 第三方提供服务 | **未决(修正案 §12-Q9;E 案另见 §12-Q8)**:第三方提供进程级基础设施的版本化 SPI 是否开放、何时——第一版**不开放**;修正案对 §12-Q8 的建议去向为 13 选型节与 ADR-0006(`docs/adr/0006-process-service-registry.md`;修正案原文编号 0005,因 `docs/adr/0005` 已被《架构冻结测试门禁》占用而顺延为 0006)的未决项;本条登记去向:本节(07 §7.4) |
 | `SessionService` 公开方法签名 | **不变**:v4.1 不在 `SessionService` 公开面新增任何服务相关方法;服务触达会话走三通道(订阅 `SessionEventBus`、只读快照、受控命令)——受控命令即 `switchMode` / `dissolve` / `createSession` 既有签名(§3.2/§7.1),服务属切换来源②,与 `/sm` 命令同权 |
 
-> 一句话:v4.1 的进程级服务同样是**引擎内部居民**——公共 API 的消费者(别的插件)既查询不到服务,也(第一版)提供不了服务;服务触达会话走三通道,不经 `MiniGameApi`。开放与否留给未决问题(§12-Q9、§12-Q8)裁决。
+> 一句话:v4.1 的进程级服务同样是**引擎内部居民**——公共 API 的消费者(别的插件)既查询不到服务,也(第一版)提供不了服务;服务触达会话走三通道,不经 `HydrokarbsApi`。开放与否留给未决问题(§12-Q9、§12-Q8)裁决。
 >
-> ★v1.1 注(D10):三通道与 API 面扩充**互不打通**的声明为本节正式口径——服务是引擎内部居民,不消费 `MiniGameApi`;`joinSession`/`leaveSession` 扩大的是**外部调用方**阵营(命令/监听/伴随插件/玩法插件)的执行权,不构成第四通道(ArchUnit 增款:`engine/service/**` 与顶层 `service/**` 不得 import `api/**`,★40 增款;14.37)。本节两个未决项(§12-Q9/Q8)**维持**,不随 v1.1 改变。
+> ★v1.1 注(D10):三通道与 API 面扩充**互不打通**的声明为本节正式口径——服务是引擎内部居民,不消费 `HydrokarbsApi`;`joinSession`/`leaveSession`(★v1.15/33 号:已迁 `SessionHandle#join/leave`,口径不变——句柄扩大的仍是**外部调用方**阵营(命令/监听/伴随插件/玩法插件)的执行权)扩大的是该阵营的执行权,不构成第四通道(ArchUnit 增款:`engine/service/**` 与顶层 `service/**` 不得 import `api/**`,★40 增款;14.37)。本节两个未决项(§12-Q9/Q8)**维持**,不随 v1.1 改变。
 
 ### 7.5 跨插件消费(★v1.1:伴随插件的完整权限面)
 
-v1.1 起,框架是**独立插件**、玩法与伴随插件是**消费方**(`depend: [HydroKarbs]`,compileOnly + 禁 shade,14.35)。扩充后的 `MiniGameApi` 给伴随插件(13 §13.9 案②形态)完整权限面——与玩法插件同权,不再是"只能看":
+v1.1 起,框架是**独立插件**、玩法与伴随插件是**消费方**(`depend: [HydroKarbs]`,compileOnly + 禁 shade,14.35)。扩充后的 `HydrokarbsApi` 给伴随插件(13 §13.9 案②形态)完整权限面——与玩法插件同权,不再是"只能看":
 
 | 能力 | API 面 | 说明 |
 |---|---|---|
-| 查询 | `sessionOf` / `session` / `sessions` / `modes` / `maps` / `mode` | 不可变 record 快照;不持活引用跨切换(现取不缓存,14.31 同款纪律)。战绩 `stats`/`top` **不在本面**(★v1.3:随 R1 悬置——归宿主线消费,签名类型已随 L5 出框架;缺席语义回填裁决 21 §6-Q1) |
-| 控制 | `switchMode` / `createSession(SessionRecipe)`(★v1.4:两参重载已删除,`SessionRecipe` 为建会话唯一形态,22 号) | 与 `/sm` 命令同权;`force` 是显式选择,走 review 条款 |
-| 成员 | `joinSession` / `leaveSession`(D2) | = `SessionService#join/leave` 的受控暴露;含 `JoinAdmission` 裁决;leave 幂等;权限/审计口径未决(19-§7-Q3,倾向第一版无权限闸 + SEVERE 审计日志) |
+| 查询 | `sessionOf` / `session` / `sessions`(★v1.15:产 `SessionHandle`)+ `modes` / `maps` / `mode` | 会话查询产句柄(控制与信息面载体,§7.1),快照经 `handle.info()` 现取(组合式,§7.3);目录三法不可变 record 快照;不持活引用跨切换(现取不缓存,14.31 同款纪律)。战绩 `stats`/`top` **不在本面**(★v1.3:随 R1 悬置——归宿主线消费,签名类型已随 L5 出框架;缺席语义回填裁决 21 §6-Q1) |
+| 控制 | `createSession(SessionRecipe)`(★v1.4:两参重载已删除,`SessionRecipe` 为建会话唯一形态,22 号;★v1.15:返回 `SessionHandle`)+ `SessionHandle#switchMode`(★v1.15/33 号:原 `HydrokarbsApi#switchMode(String,…)` 迁句柄) | 与 `/sm` 命令同权;`force` 是显式选择,走 review 条款;句柄 `switchMode` 失败语义:会话已消亡 → future 完成 `Rejected(MODE_NOT_FOUND)`(detail 点名会话 id)、future 永不悬挂(§7.1 句柄契约块);任意线程发起、Impl 回主线程、future 主线程完成 |
+| 成员 | `SessionHandle#join(UUID)` / `SessionHandle#leave(UUID, LeaveReason)`(D2;★v1.15/33 号:原 `joinSession`/`leaveSession` 迁句柄)+ `HydrokarbsApi#leaveSession(UUID)`(★v1.16/34 号:玩家域单口) | = `SessionService#join/leave` 的受控暴露;含 `JoinAdmission` 裁决(join,引擎既有裁决原样透传);leave 收窄为**会话域守卫**(仅当玩家现属会话 == 本句柄会话才移出,否则 no-op;不在任何会话 = no-op 幂等;33 号裁决二);`leaveSession(UUID)` 为玩家域单口:免解析按玩家移出现属会话,KICK 立即移除 → true / 不在任何会话 → false(boolean 收口);权限/审计口径未决(19-§7-Q3,倾向第一版无权限闸 + SEVERE 审计日志) |
 | 事件 | `subscribeSessionEvents`(D3) | `SessionEventView` 不可变快照族(八事件:§3.1 七事件 + ComponentQuarantined);句柄 `close()` 注销;订阅者异常隔离;实例事件不暴露(Q5) |
 | 能力标签(★v1.7 历史口径) | **两法已删除**(原 `registerCapability(Plugin, String)` / `capabilities()`,D4——★v1.7/25 号:能力标签机制全链退场,字符串契约不严谨;幂等注册/插件 disable 自动摘除等原语义随机制退役) | **外部能力 = 会话组件桥接**(★21/★60):提供方经 `registerSessionComponents`/`SessionRecipe` 贡献类型化桥接组件(上行行),消费方组件 `requires`/`requiresOptional` 类型化声明——装配期响亮、运行期 quarantine;原「§8 先例 14.22 懒解析与动态刷新纪律」归宿主扩展线自持 |
 | 会话组件贡献 | **全局贡献 `registerSessionComponents(Plugin, specs)`** / 单次 `SessionRecipe.extraComponents`(D14;**★v1.6/24 号:原通道一 `SessionComponentProvider` SPI 已删除,全局贡献改本面显式注册**——干跑校验响亮上抛、幂等重收录、`unregisterSessionComponents` 摘除;**★v1.7/25 号:本行即外部能力新形态的落点**——外部能力 = 类型化桥接会话组件,消费方 `requires`/`requiresOptional` 声明,见 §7.3 注) | 插件可"拼"会话;模式仍无权;无运行期增删;合并序与防线见 §7.3;disable 兜底四族含贡献(后续会话不再合并,已装配会话不受影响;**★v1.7:兜底四族收敛三族——能力标签族随机制退场移除**) |
@@ -280,10 +341,10 @@ v1.1 起,框架是**独立插件**、玩法与伴随插件是**消费方**(`depe
 ```java
 public class JoinSignPlugin extends JavaPlugin {
     private EventSubscription sub;                       // 句柄只在实例字段(14.38)
-    private MiniGameApi api;
+    private HydrokarbsApi api;
 
     @Override public void onEnable() {
-        api = getServer().getServicesManager().load(MiniGameApi.class);
+        api = getServer().getServicesManager().load(HydrokarbsApi.class);
         if (api == null) {                               // 框架缺席 → 拒载不崩服(★v1.14:版本协商面已退场,32 号,仅查在场)
             getLogger().severe("HydroKarbs 缺席,禁用"); setEnabled(false); return;
         }
@@ -292,16 +353,17 @@ public class JoinSignPlugin extends JavaPlugin {
         });
     }
     void onSignClick(Player player, String arenaId) {     // 主线程
-        api.leaveSession(player.getUniqueId(), LeaveReason.MOVED_OUT);   // D2:hub 出局(幂等)
-        api.joinSession(arenaId, player.getUniqueId())                    // D2:arena 入局(含 JoinAdmission 裁决)
-           .ifRejected(reason -> player.sendMessage(Text.warn("入场被拒:" + reason)));
+        api.leaveSession(player.getUniqueId());           // D2:hub 出局——玩家域单口(★v1.16/34 号:KICK 立即移除;不在任何会话 → false 幂等。原 sessionOf→leave 组合写法随 33 号句柄化后示例引用了不存在的 LeaveReason.MOVED_OUT,本版顺手归正)
+        api.session(arenaId)                              // D2:arena 入局——先解析目标句柄再 join(★v1.15/33 号;含 JoinAdmission 裁决;会话缺席 → empty,可在此提示)
+           .ifPresent(h -> h.join(player.getUniqueId())
+               .ifRejected(reason -> player.sendMessage(Text.warn("入场被拒:" + reason))));
     }
     @Override public void onDisable() { if (sub != null) sub.close(); }   // 显式注销(14.38)
 }
 ```
 
-**示例二:跨服看板插件**——`subscribeSessionEvents`(Created/Dissolved/ModeSwitchCompleted)+ `sessions()` 只读快照维护"现存会话"视图;数据一律现取,不持活引用(镜像服务层 `GlobalBoard` 形态,§13.9 案①)。
+**示例二:跨服看板插件**——`subscribeSessionEvents`(Created/Dissolved/ModeSwitchCompleted)+ `sessions()` 解析句柄、经 `info()` 现取快照维护"现存会话"视图(★v1.15/33 号:`sessions()` 产 `SessionHandle`,快照不再直接随查询返回);数据一律现取,不持活引用(镜像服务层 `GlobalBoard` 形态,§13.9 案①)。
 
-**示例三:赛程器/第二宿主**——`createSession(new SessionRecipe("mode", Optional.of("map"), pool, List.of(new MyGraceComponent.Spec(...))))` 按需定制竞技场(D14 单次贡献);宿主级策略走 `api.registerSessionComponents(this, List.of(new MyGraceComponent.Spec(...)))` 显式注册(全局贡献;干跑校验失败响亮抛,后续所有新会话合并)。详见 §13.10。
+**示例三:赛程器/第二宿主**——`createSession(new SessionRecipe("mode", Optional.of("map"), pool, List.of(new MyGraceComponent.Spec(...))))` 按需定制竞技场(D14 单次贡献;★v1.15/33 号:返回 `SessionHandle`——会话 id 经 `handle.sessionId()` 读、快照经 `handle.info()` 现取);宿主级策略走 `api.registerSessionComponents(this, List.of(new MyGraceComponent.Spec(...)))` 显式注册(全局贡献;干跑校验失败响亮抛,后续所有新会话合并)。详见 §13.10。
 
 ---

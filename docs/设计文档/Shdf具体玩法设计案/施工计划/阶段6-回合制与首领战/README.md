@@ -50,7 +50,7 @@
 
 | 承诺 | 交给谁 |
 |---|---|
-| bomb/boss 两个真实消费者,作为 `MiniGameApi` 冻结面的行为基线 | 7.1(API 冻结) |
+| bomb/boss 两个真实消费者,作为 `HydrokarbsApi` 冻结面的行为基线 | 7.1(API 冻结) |
 | SPI 注册两行 + 两个工厂类,作为第三方 `MatchModeProvider` 注册的对照样板 | 7.2 |
 | `Bomb/BossDeclarationTest`:模式冻结测试的可仿写模板 | 7.2 / 7.4 |
 | 「引擎零改动」成立记录(6.4 留痕):阶段7 任何 API 变更不得打破 ★5 | 7.4(总验) |

@@ -8,7 +8,7 @@ import com.hydrokarbs.engine.event.SessionEventBus;
 import com.hydrokarbs.engine.session.SessionId;
 
 /**
- * 会话组件贡献收录表(D14 通道一;★v1.6 唯一调用方 = {@code MiniGameApiImpl#registerSessionComponents})。
+ * 会话组件贡献收录表(D14 通道一;★v1.6 唯一调用方 = {@code HydrokarbsApiImpl#registerSessionComponents})。
  *
  * <p><b>职责两件</b>:①收录——干跑合并校验(经 scratch {@link SessionComponentRegistry}
  * 走与真实装配同一套 bind 查重 + 依赖校验)通过才落地;②按提供方身份摘除

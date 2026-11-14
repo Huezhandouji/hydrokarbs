@@ -53,7 +53,7 @@ public final class MapRegistry {
 
     private volatile Snapshot snapshot = Snapshot.EMPTY;
 
-    // ── 注册通道(MiniGameApi#registerMap 的委托目标) ────────────────────
+    // ── 注册通道(HydrokarbsApi#registerMap 的委托目标) ────────────────────
 
     /**
      * 注册一张地图(注册期校验见类注;重复 id 响亮抛点名先到者)。主线程调用。

@@ -28,10 +28,10 @@ import com.hydrokarbs.testkit.OfflineApi;
  * (GlobalBoard 真正收到事件,7.5 决策 12)。
  *
  * <p>链路:会话总线发布 → 镜像点(SessionServiceImpl.create 挂接)→ ⑨ 汇聚总线 →
- * {@code MiniGameApiImpl#subscribeSessionEvents} 快照转换 → 消费者回调。
+ * {@code HydrokarbsApiImpl#subscribeSessionEvents} 快照转换 → 消费者回调。
  * 真会话服务装配见 {@link OfflineApi}。
  */
-class MiniGameApiEventsTest {
+class HydrokarbsApiEventsTest {
 
     private static final String MODE_ID = "probe_mode";
 
@@ -58,8 +58,9 @@ class MiniGameApiEventsTest {
 
         UUID alice = UUID.randomUUID();
         Session session = harness.createSession("s1", MODE_ID);
-        harness.api.joinSession("s1", alice);
-        harness.api.leaveSession(alice, com.hydrokarbs.engine.session.LeaveReason.KICK);
+        harness.api.session("s1").orElseThrow().join(alice);   // ★v1.15:成员操作经句柄
+        harness.api.sessionOf(alice).ifPresent(
+                sessionHandle -> sessionHandle.leave(alice, com.hydrokarbs.engine.session.LeaveReason.KICK));
         session.events().publish(SessionEvent.SessionComponentQuarantined.of(
                 session.id(), "probe-component", "update-boom"));   // 隔离事件直发布(覆盖第八族映射)
 
@@ -96,7 +97,7 @@ class MiniGameApiEventsTest {
         harness.api.subscribeSessionEvents(received::add);
         UUID alice = UUID.randomUUID();
         harness.createSession("s1", MODE_ID);
-        harness.api.joinSession("s1", alice);
+        harness.api.session("s1").orElseThrow().join(alice);   // ★v1.15:成员操作经句柄
 
         assertFalse(received.isEmpty());
         // 允许分量类型 = 白名单值(SessionId/UUID/String/long/boolean)——零引擎活类型
@@ -136,7 +137,7 @@ class MiniGameApiEventsTest {
         harness.api.subscribeSessionEvents(healthy::add);
 
         harness.createSession("s1", MODE_ID);
-        harness.api.joinSession("s1", UUID.randomUUID());
+        harness.api.session("s1").orElseThrow().join(UUID.randomUUID());
 
         assertFalse(healthy.isEmpty(), "坏订阅者不拖累其他订阅者(镜像总线既有隔离,★43)");
     }

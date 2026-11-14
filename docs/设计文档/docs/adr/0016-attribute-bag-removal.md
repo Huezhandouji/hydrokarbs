@@ -30,7 +30,7 @@
    - **id = 声明目录名**(路径派生;目录查重/副本命名/钉图键三同一源,ADR-0014 决策 2 续行)。
 3. **`TagProvider` 约定 = 声明词料的唯一解释面**:`map/TagProvider{ Set<String> tags(); }`(`map/TagProvider.java:13/16`);`MetaAttributes.tags(Object)` 是唯一读口——`metadata` 实现 `TagProvider` 时取其 `tags()` 的不可变拷贝,否则(含 `null`)返回空集(`map/MetaAttributes.java:23-28`)。空集 = 不被任何模式按标签选中(20-D3 口径)。`tags()` 不得返回 `null`;实现随 `metadata` 一起按引用冻结。
 4. **`Handoff` 不随退场**:交接袋是独立机制(跨模式通道、键随主人、§3.3),其 `Key<T>` 与「命名空间 = 写入方 id」纪律原样;仅类注里与属性袋类比的两句措辞改为自述(`Handoff.java:10/16`),机制零改动。
-5. **公共面与版本**:`MiniGameApi` 17 方法签名一字不动;`API_VERSION` **维持 7**(方法面零变化,破坏性在声明形状侧);`ApiSurfaceTest` 白名单与 BASELINE 合法重录(删 `AttributeBag` 及其 `Key`/方法行、各端口 `attrs()`/`attr()` 行,增 `TagProvider#tags()` 行与 `MapDefinition` 三分量/`id()` 行),背书 = 本 ADR。
+5. **公共面与版本**:`HydrokarbsApi` 17 方法签名一字不动;`API_VERSION` **维持 7**(方法面零变化,破坏性在声明形状侧);`ApiSurfaceTest` 白名单与 BASELINE 合法重录(删 `AttributeBag` 及其 `Key`/方法行、各端口 `attrs()`/`attr()` 行,增 `TagProvider#tags()` 行与 `MapDefinition` 三分量/`id()` 行),背书 = 本 ADR。
 
 ## 替代方案(已否)
 
@@ -48,7 +48,7 @@
 
 ## 后果
 
-- 正:`AttributeBag` 全库零残留(类/`Key`/端口 `attrs()`/`attr()`/`bindComponent`/命名空间开关);`MapDefinition` 三字段定案(`(worldDirectoryPath, resetStrategy, Object metadata)`;二参构造缺省 `REUSE_DIRTY`);`map/TagProvider` + `MetaAttributes.tags(Object)` 为标签唯一解释面;`map/` 包四件(MapDefinition/MapRegistry/MetaAttributes/TagProvider);`API_VERSION` 维持 7、`MiniGameApi` 17 法不动;`ApiSurfaceTest` BASELINE 合法重录(背书 = 本 ADR)。
+- 正:`AttributeBag` 全库零残留(类/`Key`/端口 `attrs()`/`attr()`/`bindComponent`/命名空间开关);`MapDefinition` 三字段定案(`(worldDirectoryPath, resetStrategy, Object metadata)`;二参构造缺省 `REUSE_DIRTY`);`map/TagProvider` + `MetaAttributes.tags(Object)` 为标签唯一解释面;`map/` 包四件(MapDefinition/MapRegistry/MetaAttributes/TagProvider);`API_VERSION` 维持 7、`HydrokarbsApi` 17 法不动;`ApiSurfaceTest` BASELINE 合法重录(背书 = 本 ADR)。
 - 负:消费方迁移——`new MapDefinition(路径, metadata)`(两参)或三参构造;标签声明从「门面写约定键」改为「metadata 实现 `TagProvider`」;`MetaAttributes.set/frozen/resetStrategy(…)` 调用点编译期即断;`metadata` 冻结退化为契约(背景/决策 3);`API_VERSION=7` 窗口内两次声明形状变更无法用版本号区分(权衡-失③)。
 - 验收:`gradlew build` 绿 + `grep -rn "AttributeBag" src/` 零命中(本次验收);不新增 ★ 编号,★19(FROZEN 17 行)与 ★44(BASELINE 重录)的既有处置口径不变。
 - 文档修改点(本裁决同步落盘):`02-核心概念.md` §2.7(改写为「状态唯一 = 字段 + 强类型读口;声明级 = 三字段 + `TagProvider`」)与 §2.2/§2.5/§2.5.1 骨架的 bag 行;`14-陷阱清单.md` 14.20/14.26/14.29(条目号不动,注内给新旧口径);`CONTEXT.md`(属性袋入「历史术语」,补「声明词料」「TagProvider」);`26-v1.8修正案` 头部状态注(正文存档不改写);`07-公共API.md`(§7.1 契约块/§7.2 冻结与值对象行/§7.5 地图行);`12-代码骨架.md`(包树/骨架块/★v1.8 增量注后追加);`13-扩展步骤.md`(§13.1 步骤 6/§13.11 步骤 3~4);`03-会话与模式切换.md`(§3.1 会话属性行/§3.3 类比句/§3.7 策略来源行);`01-分层架构.md`(L2 引擎盒/遗留对照行);`10-数据库.md`(§10.5 主线程读表);`00-假设与体检.md`(§0.5.14 时点注);`16-路线图与验收.md`(★63 就地注/硬边界图);`AGENTS.md` §4-10;`docs/设计文档/README.md`(v1.8 定位节注/白名单例外条款/ADR 索引)。

@@ -48,7 +48,7 @@
 - 对阶段3(SHDF 宿主扩展线,迁 Shdf 侧):`CapabilityRegistry`(2.3)是字符串标签注册机制本体——宿主桥接侧的能力标签注册与软依赖降级(`CapabilitySoftDependTest`,★21,3.3 迁 Shdf 侧;★32 标签机制框架侧由 2.6 建立)只消费它;`SessionServiceImpl` 的 A2 能力校验点(§3.2-A2)已按"标签集合包含性"实现,引擎零字面量;`SessionIngestListener`(2.3)是 join/quit/kick 路由唯一入口,宿主扩展不另设监听。角色系统接入的实现见 Shdf具体玩法设计案/。
 - 对阶段4(组件线):`MatchModeConfig` 只读配置视图(2.2)是各组件 Spec 从 `modes/*.yml` 取参的唯一通道;2.5(迁 Shdf 侧)的大厅工厂为阶段4 留有**两行回接口**——`display`(★v1.3:`DisplayComponent` 已迁 Shdf 侧 10,回接在宿主工程内完成)与 `guard`(阶段4 `RegionGuardComponent.Spec`),回接零引擎改动。
 - 对阶段5(框架半段 5.3/5.4 持久化——**★v1.3:整体迁宿主线**,总览 §11;玩法半段 5.1/5.2 迁 Shdf 侧):`switchMode` 端到端路径(2.3)与 `Handoff` 交接机制是玩法线首模式接入的统一承接面——★18 的交接契约测试框架侧常驻(`HandoffContractTest`),真键复验(战报交接)属玩法线 5.2(迁 Shdf 侧);~~5.3/5.4 只依赖阶段1 的 `PersistencePort`~~(★v1.3:该接口已删)。首模式与端到端链路的实现见 Shdf具体玩法设计案/。
-- 对阶段6/7:★14 在 6.x 带玩法复测(阶段6 迁 Shdf 侧);2.2 的 `MatchModeRegistry` 双发现与 2.3 的 `SessionService` 方法集是 7.1 `MiniGameApi` 冻结面与 7.2 第三方注册(`ThirdPartyModeRegistrationTest`,★20)的直接素材——**2.2/2.3 的公开类型签名一经合入即按冻结对待**,改名要过设计评审。
+- 对阶段6/7:★14 在 6.x 带玩法复测(阶段6 迁 Shdf 侧);2.2 的 `MatchModeRegistry` 双发现与 2.3 的 `SessionService` 方法集是 7.1 `HydrokarbsApi` 冻结面与 7.2 第三方注册(`ThirdPartyModeRegistrationTest`,★20)的直接素材——**2.2/2.3 的公开类型签名一经合入即按冻结对待**,改名要过设计评审。
 
 ## 4. 风险与缓解
 

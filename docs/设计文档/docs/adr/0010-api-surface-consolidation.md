@@ -8,7 +8,7 @@
 
 至 v1.3,同一能力在两处出现了**双口径并存**:
 
-1. **建会话**:`MiniGameApi` 同时暴露 `createSession(String, String)` 与 `createSession(SessionRecipe)`。两参形态自 v1.1 起以「保留,等价于空 recipe」(07 §7.1)悬挂——`SessionRecipe.of(modeId, mapId)` 对两参调用的每个可表示场景逐字段等价,双形态之间没有表达力差异,只有两份冻结清单行、两处 javadoc 口径、两行权限面表、每次讲解都要说两遍的持续成本。
+1. **建会话**:`HydrokarbsApi` 同时暴露 `createSession(String, String)` 与 `createSession(SessionRecipe)`。两参形态自 v1.1 起以「保留,等价于空 recipe」(07 §7.1)悬挂——`SessionRecipe.of(modeId, mapId)` 对两参调用的每个可表示场景逐字段等价,双形态之间没有表达力差异,只有两份冻结清单行、两处 javadoc 口径、两行权限面表、每次讲解都要说两遍的持续成本。
 2. **地图注册**:v1.2(ADR-0008)让显式注册与文件装载(`maps/*.yml` 启动扫描)双通道汇入 `MapRegistry` 同一命名空间。落地后,双通道产生了自身的复杂度:同一目录两条「先到者」规则(注册式撞名 vs 与文件式撞名)、`maps` 级 reload 只触碰文件半边的分叉语义(挂 13/15/14 三处口径注)、快照「文件式半边 + 注册式半边」双簿记。而注册通道本身已承载文件通道的全部场景:跨 jar 玩法图 = 解包 + 代码构造 + `registerMap`;动态活动图 = `unregisterMap` + `registerMap`;模板落盘约定(`maps/templates/<mapId>/`)与注册期校验(20-D2/D3)在任何通道下都成立。
 
 两项并存的性质相同:**同一能力维护两份口径,其中一份不提供另一份所没有的能力**。One-Version Rule(07 §7.2 引用;本框架消费面纪律)反对的正是这种状态。

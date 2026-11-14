@@ -21,7 +21,7 @@ import com.hydrokarbs.map.MapDefinition;
  * 模式注册表:发现 + 注册闸(12-代码骨架 §12.2)。
  *
  * <p>发现(★v1.6):仅 {@code ServiceLoader}(本 jar);第三方模式经
- * {@code MiniGameApi#registerMode} 显式注册。引擎零模式知识(§14.13)。
+ * {@code HydrokarbsApi#registerMode} 显式注册。引擎零模式知识(§14.13)。
  *
  * <p><b>注册闸(两类失败语义不得弄反,§2.6)</b>:依赖校验失败 → 启动期跳过
  * 注册 + SEVERE(坏模板不进注册表);重复 id → 一律响亮抛
@@ -52,13 +52,13 @@ public final class MatchModeRegistry implements ModeLookup {
      * 发现(本 jar 先,每个提供方走同一注册闸):
      * ① {@code ServiceLoader.load(MatchModeProvider.class)}——本 jar 的
      * {@code META-INF/services} 清单;② ServicesManager 半边已退场(★v1.6)
-     * ——第三方经 {@code MiniGameApi#registerMode} 注册(引擎零静态调用,离线可测)。
+     * ——第三方经 {@code HydrokarbsApi#registerMode} 注册(引擎零静态调用,离线可测)。
      * 收尾打注册表初始化行(0 个模式属正常,INFO 级)。
      */
     public void discover() {
         // ① ServiceLoader(本 jar):SPI 清单里每行一个工厂全限定名
         ServiceLoader.load(MatchModeProvider.class).forEach(this::register);
-        // ② ServicesManager 半边已退场(★v1.6)——第三方注册走 MiniGameApi#registerMode
+        // ② ServicesManager 半边已退场(★v1.6)——第三方注册走 HydrokarbsApi#registerMode
         logger.log(Level.INFO, "Mode registry initialized: {0} mode(s)", modes.size());
     }
 

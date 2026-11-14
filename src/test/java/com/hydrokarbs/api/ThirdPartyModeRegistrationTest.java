@@ -116,7 +116,7 @@ class ThirdPartyModeRegistrationTest {
     @AfterEach
     void tearDown() {
         if (implLogHandler != null) {
-            Logger.getLogger(MiniGameApiImpl.class.getName()).removeHandler(implLogHandler);
+            Logger.getLogger(HydrokarbsApiImpl.class.getName()).removeHandler(implLogHandler);
             implLogHandler = null;
         }
     }
@@ -263,7 +263,7 @@ class ThirdPartyModeRegistrationTest {
         }
     }
 
-    /** 捕获 {@code MiniGameApiImpl} 类级日志(回退 WARN/版本协商打点断言面;@AfterEach 摘除)。 */
+    /** 捕获 {@code HydrokarbsApiImpl} 类级日志(回退 WARN/版本协商打点断言面;@AfterEach 摘除)。 */
     private void captureImplLog() {
         implLogHandler = new Handler() {
             @Override
@@ -279,7 +279,7 @@ class ThirdPartyModeRegistrationTest {
             public void close() {
             }
         };
-        Logger.getLogger(MiniGameApiImpl.class.getName()).addHandler(implLogHandler);
+        Logger.getLogger(HydrokarbsApiImpl.class.getName()).addHandler(implLogHandler);
     }
 
     private boolean hasLevelContaining(Level level, String fragment) {
@@ -298,7 +298,7 @@ class ThirdPartyModeRegistrationTest {
 
     @Test
     void registeredProviderEntersCatalogAndApiView() {
-        MiniGameApiImpl api = new MiniGameApiImpl(new RecordingService(), registry,
+        HydrokarbsApiImpl api = new HydrokarbsApiImpl(new RecordingService(), registry,
                 new MapRegistry(),
                 new SessionEventBus(),
                 new SessionComponentContributionRegistry(), Runnable::run, () -> "");
@@ -319,7 +319,7 @@ class ThirdPartyModeRegistrationTest {
 
     @Test
     void thirdPartyModeSelectableThroughApiSwitch() {
-        MiniGameApiImpl api = new MiniGameApiImpl(new RecordingService(), registry,
+        HydrokarbsApiImpl api = new HydrokarbsApiImpl(new RecordingService(), registry,
                 new MapRegistry(),
                 new SessionEventBus(),
                 new SessionComponentContributionRegistry(), Runnable::run, () -> "");
@@ -330,14 +330,14 @@ class ThirdPartyModeRegistrationTest {
 
         RecordingService fake = new RecordingService();
         fake.setSessions(List.of(OfflineAssembly.session("s1")));
-        MiniGameApiImpl switching = new MiniGameApiImpl(fake, registry,
+        HydrokarbsApiImpl switching = new HydrokarbsApiImpl(fake, registry,
                 new MapRegistry(),
                 new SessionEventBus(),
                 new SessionComponentContributionRegistry(), Runnable::run, () -> "");
 
         Handoff payload = Handoff.empty();
-        CompletableFuture<SwitchResult> future = switching.switchMode("s1",
-                new MatchModeSelection(PROBE, Optional.empty(), true), payload);
+        CompletableFuture<SwitchResult> future = switching.session("s1").orElseThrow()
+                .switchMode(new MatchModeSelection(PROBE, Optional.empty(), true), payload);
 
         SwitchResult result = future.join();                       // 直接执行器 → 内联完成
         assertInstanceOf(SwitchResult.Succeeded.class, result, "fake 回 Succeeded(★20 口径)");
@@ -353,7 +353,7 @@ class ThirdPartyModeRegistrationTest {
 
     @Test
     void dependencyFailureIsLoudAndNotRegistered() {
-        MiniGameApiImpl api = new MiniGameApiImpl(new RecordingService(), registry,
+        HydrokarbsApiImpl api = new HydrokarbsApiImpl(new RecordingService(), registry,
                 new MapRegistry(),
                 new SessionEventBus(),
                 new SessionComponentContributionRegistry(), Runnable::run, () -> "");
@@ -372,7 +372,7 @@ class ThirdPartyModeRegistrationTest {
 
     @Test
     void buildFailureIsLoudAndNotRegistered() {
-        MiniGameApiImpl api = new MiniGameApiImpl(new RecordingService(), registry,
+        HydrokarbsApiImpl api = new HydrokarbsApiImpl(new RecordingService(), registry,
                 new MapRegistry(),
                 new SessionEventBus(),
                 new SessionComponentContributionRegistry(), Runnable::run, () -> "");
@@ -387,7 +387,7 @@ class ThirdPartyModeRegistrationTest {
 
     @Test
     void duplicateIdAtRegistrationIsLoudAndKeepsFirstArrival() {
-        MiniGameApiImpl api = new MiniGameApiImpl(new RecordingService(), registry,
+        HydrokarbsApiImpl api = new HydrokarbsApiImpl(new RecordingService(), registry,
                 new MapRegistry(),
                 new SessionEventBus(),
                 new SessionComponentContributionRegistry(), Runnable::run, () -> "");
@@ -406,7 +406,7 @@ class ThirdPartyModeRegistrationTest {
     @Test
     void unregisterRemovesCatalogAndRedirectsAffectedSessionToFallback() {
         RecordingService fake = new RecordingService();
-        MiniGameApiImpl api = new MiniGameApiImpl(fake, registry,
+        HydrokarbsApiImpl api = new HydrokarbsApiImpl(fake, registry,
                 new MapRegistry(),
                 new SessionEventBus(), contributions, Runnable::run, () -> FALLBACK);
         api.registerMode(TestPlugins.named("fallback-plugin"), provider(FALLBACK, Set.of("demo")));
@@ -433,7 +433,7 @@ class ThirdPartyModeRegistrationTest {
     @Test
     void unregisterWithBlankFallbackDissolvesSession() {
         RecordingService fake = new RecordingService();
-        MiniGameApiImpl api = new MiniGameApiImpl(fake, registry,
+        HydrokarbsApiImpl api = new HydrokarbsApiImpl(fake, registry,
                 new MapRegistry(),
                 new SessionEventBus(), contributions, Runnable::run, () -> "");   // R3:默认空 = 无 fallback
         var provider = TestPlugins.named("their-plugin");
@@ -451,7 +451,7 @@ class ThirdPartyModeRegistrationTest {
     @Test
     void unregisterWithUnregisteredFallbackDissolvesSession() {
         RecordingService fake = new RecordingService();
-        MiniGameApiImpl api = new MiniGameApiImpl(fake, registry,
+        HydrokarbsApiImpl api = new HydrokarbsApiImpl(fake, registry,
                 new MapRegistry(),
                 new SessionEventBus(), contributions, Runnable::run, () -> "ghost_mode");   // 指向未注册 id → 不可用
         var provider = TestPlugins.named("their-plugin");
@@ -468,7 +468,7 @@ class ThirdPartyModeRegistrationTest {
     void rejectedFallbackSwitchWarnsAndDoesNotSpin() {
         captureImplLog();                          // 回退 WARN 走 Impl 类级日志
         RecordingService fake = new RecordingService();
-        MiniGameApiImpl api = new MiniGameApiImpl(fake, registry,
+        HydrokarbsApiImpl api = new HydrokarbsApiImpl(fake, registry,
                 new MapRegistry(),
                 new SessionEventBus(), contributions, Runnable::run, () -> FALLBACK);
         api.registerMode(TestPlugins.named("fallback-plugin"), provider(FALLBACK, Set.of("demo")));
@@ -485,7 +485,7 @@ class ThirdPartyModeRegistrationTest {
 
     @Test
     void unregisterForeignModeIsRefusedAndUnknownIdIsNoOp() {
-        MiniGameApiImpl api = new MiniGameApiImpl(new RecordingService(), registry,
+        HydrokarbsApiImpl api = new HydrokarbsApiImpl(new RecordingService(), registry,
                 new MapRegistry(),
                 new SessionEventBus(), contributions, Runnable::run, () -> "");
         api.registerMode(TestPlugins.named("other-plugin"), provider(PROBE, Set.of("demo")));
@@ -508,7 +508,7 @@ class ThirdPartyModeRegistrationTest {
 
     @Test
     void registeredContributionsRemovedByProviderPluginKey() {
-        MiniGameApiImpl api = new MiniGameApiImpl(new RecordingService(), registry,
+        HydrokarbsApiImpl api = new HydrokarbsApiImpl(new RecordingService(), registry,
                 new MapRegistry(),
                 new SessionEventBus(), contributions, Runnable::run, () -> "");
         var provider = TestPlugins.named("their-plugin");
@@ -522,7 +522,7 @@ class ThirdPartyModeRegistrationTest {
 
     @Test
     void reRegistrationReplacesContributionsWithoutGhostCollision() {
-        MiniGameApiImpl api = new MiniGameApiImpl(new RecordingService(), registry,
+        HydrokarbsApiImpl api = new HydrokarbsApiImpl(new RecordingService(), registry,
                 new MapRegistry(),
                 new SessionEventBus(), contributions, Runnable::run, () -> "");
         var provider = TestPlugins.named("their-plugin");

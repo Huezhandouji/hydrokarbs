@@ -64,7 +64,7 @@ public final class ServiceRegistry implements AutoCloseable {
 | 通道 | 方向 | 授权 |
 |---|---|---|
 | **订阅 `SessionEventBus`**(`SessionCreated / MemberJoined/Left / ModeSwitched / SessionDissolved / SessionComponentQuarantined`) | 会话 → 服务 | 感知生灭的官方通道(§3.1 事件行既有定位"给跨切面逻辑用");订阅句柄在服务 `stop` 中注销 |
-| **只读快照**(`MiniGameApi.sessions()` 不可变 record;引擎内代码可经 `SessionService` 遍历 + `MatchModeInstanceAccess`) | 会话 → 服务 | 只读;**不得持有活实例/活组件引用跨切换**(镜像 ★29 的"现取不缓存"纪律) |
+| **只读快照**(`HydrokarbsApi.sessions()` 不可变 record;引擎内代码可经 `SessionService` 遍历 + `MatchModeInstanceAccess`) | 会话 → 服务 | 只读;**不得持有活实例/活组件引用跨切换**(镜像 ★29 的"现取不缓存"纪律) |
 | **受控命令**(`SessionService#switchMode / dissolve / createSession`) | 服务 → 会话 | 服务属**外部调用方(切换来源②)**,与 `/sm` 命令同权;`force` 是显式选择,走 review 条款;无其他影响力端口 |
 
 ### D6 服务与组件互不可见
@@ -80,13 +80,13 @@ public final class ServiceRegistry implements AutoCloseable {
 
 ### D8 常驻模块选型四案 + 注册受众五案(裁决记录,写入 13)
 
-- **常驻模块选型**(按侵入度从低到高,先问再落):①拉取式(只读快照+事件,零侵入)→ ②伴随插件(框架零改动,消费 `MiniGameApi`)→ ③防腐包装式(L1 适配器+Port+包装组件)→ ④上报式(会话级组件本地权威 + 进程级服务汇总)。
+- **常驻模块选型**(按侵入度从低到高,先问再落):①拉取式(只读快照+事件,零侵入)→ ②伴随插件(框架零改动,消费 `HydrokarbsApi`)→ ③防腐包装式(L1 适配器+Port+包装组件)→ ④上报式(会话级组件本地权威 + 进程级服务汇总)。
 - **注册受众**:A 显式装配(L0 基线,服务少时最优)/ B ServiceRegistry(内部服务群 ≥3 时)/ C ServicesManager(跨插件,既有机制)/ D `ServiceHandle<S>`(可选能力懒句柄,泛化 RoleFacade 懒解析 + `CapabilityRegistry`)/ E 版本化 SPI(第三方提供基础设施——**本版不做**,登记未决 §12-Q8)。
 - 第一版落地:**A + B**(L0 显式装配进 B 注册表);C/D 沿用既有先例口径;E 不做。
 
 ### D9 公共 API 冻结面不变
 
-`MiniGameApi` 方法集不动;服务、`ServiceRegistry`、服务查询一律**不进公共面**(第三方消费/提供服务列为未决 §12-Q9;将来开放走"只增不改")。`SessionService` 公开方法签名不变。
+`HydrokarbsApi` 方法集不动;服务、`ServiceRegistry`、服务查询一律**不进公共面**(第三方消费/提供服务列为未决 §12-Q9;将来开放走"只增不改")。`SessionService` 公开方法签名不变。
 
 ### D10 候选清单复核判据(与 §6.4 会话级组件候选的关系)
 
@@ -151,4 +151,4 @@ public final class ServiceRegistry implements AutoCloseable {
 ## 未决问题
 
 - **Q8(未决)**:第三方提供基础设施的版本化 SPI(E 案)是否开放、何时。**仲裁去向**:`13-扩展步骤.md` 选型节 + 本 ADR 未决项(修正案 §12 原文写"ADR-0005 未决项",即本文件,见文首编号注);**第一版不做**(D8 注册受众 E 案"本版不做")。本 ADR 不裁决,登记待下一版评估。
-- 其余未决项均不在本 ADR 裁决,按修正案 §12 原样登记于各自去向:Q9(服务是否进 `MiniGameApi` 公共面 → 07 §7.4,第一版明确不进)、Q10(装配是否配置化 services.yml → 15,第一版 L0 硬编码)、Q11(服务热替换/热重载语义 → 15 热重载分级,第一版不支持)、Q12(§6.4 候选清单按 D10 复核 → 下一版评估,ADR-0004 候选段登记)——未静默决定。
+- 其余未决项均不在本 ADR 裁决,按修正案 §12 原样登记于各自去向:Q9(服务是否进 `HydrokarbsApi` 公共面 → 07 §7.4,第一版明确不进)、Q10(装配是否配置化 services.yml → 15,第一版 L0 硬编码)、Q11(服务热替换/热重载语义 → 15 热重载分级,第一版不支持)、Q12(§6.4 候选清单按 D10 复核 → 下一版评估,ADR-0004 候选段登记)——未静默决定。

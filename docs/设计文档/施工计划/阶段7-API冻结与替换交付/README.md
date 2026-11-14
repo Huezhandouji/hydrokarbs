@@ -4,14 +4,14 @@
 > ★v1.3 影响(总览 §11):★10~★12(数据库三验收)归属迁「宿主线(框架侧 v1.3 废止)」——本阶段出口闸门计数 **51→48**;7.1 的「查战绩」实现随 R1 悬置(落地不含 DB 依赖项,回填裁决 21 §6-Q1);发布 checklist 的「shadow jar 含 HikariCP+mysql-connector-j」项废止。
 > **★用户排期决议(2026-10-25)**:本阶段执行顺序调整为 **7.1 → 7.2 → 7.5(G1)先行**——提前至阶段4 之前(阶段7 主体只依赖阶段2,已验收 2026-10-25;组件库经模式 Builder 消费、不进 API 面,后补为「只增」关系);**7.4(全量验收与发布)后置至阶段4 完成后**执行;阶段8(G2)仍按 A13 触发条件不设时间表。**本注为施工排期决议、非依赖变更**——各子阶段「前置与依赖」的设计依赖不变(总览 `../README.md` §1/§2 决议注);§2「建议顺序」保留为原设计顺序记录,实际执行按本决议。
 > 对应设计案:`07-公共API.md`(§7.1/§7.2/§7.5)、`13-扩展步骤.md`(§13.4/§13.10)、`16-路线图与验收.md`(§16.1 P7.5+P7.6+P8、§16.2 全表)、`00-假设与体检.md`(§0.1 旧插件体检)。术语以根目录 `CONTEXT.md`(v1.1)为准。
-> v4 影响:无;MiniGameApi 冻结面未变(会话级组件第一版不进公共面)。**★v1.1 影响:冻结面由新增子阶段 7.5 按"只增不改"扩充(v2:API_VERSION/成员/事件/能力/D14),并完成包根更名与拆分彩排(G1);7.1 已交付的 v1 面不动。**
+> v4 影响:无;HydrokarbsApi 冻结面未变(会话级组件第一版不进公共面)。**★v1.1 影响:冻结面由新增子阶段 7.5 按"只增不改"扩充(v2:API_VERSION/成员/事件/能力/D14),并完成包根更名与拆分彩排(G1);7.1 已交付的 v1 面不动。**
 > ★v1.7 注(2026-10-27;修正案 25 号,能力标签机制全链退场):上行 v1.1 影响中的「能力」增量项随冻结面收敛删除(19→17 法,API_VERSION=6;7.1/7.5 两档头部有专项注;阶段3 承接行的能力标签机制条款随 ★32 废止改判 ★60,标签机制框架侧落点 2.6 相应退场)——**原文为施工序列存档,不改写,按本注读**。
 
 ## 1. 阶段目标
 
 把框架从"能玩的工程"变成"可被第三方消费的平台 + 可替换旧插件的成品":
 
-1. **对外冻结面**:落成 `com.hydrokarbs.api` 包(★v1.1-D13 包根已更名;7.1 交付时为旧根,随 7.5 全库更名)——`MiniGameApi` 接口(§7.1)、`MiniGameApiImpl` 薄委托、`SessionView`/`MatchModeInfo`/`MapInfo` 不可变 record 快照,经 `ServicesManager`(`ServicePriority.Normal`)暴露,`MiniGameApiSurfaceTest` 反射冻结方法集(学角色系统 `RoleApiSurfaceTest` 的"只增不改"纪律,§7.2、§0.1)。
+1. **对外冻结面**:落成 `com.hydrokarbs.api` 包(★v1.1-D13 包根已更名;7.1 交付时为旧根,随 7.5 全库更名)——`HydrokarbsApi` 接口(§7.1)、`HydrokarbsApiImpl` 薄委托、`SessionView`/`MatchModeInfo`/`MapInfo` 不可变 record 快照,经 `ServicesManager`(`ServicePriority.Normal`)暴露,`HydrokarbsApiSurfaceTest` 反射冻结方法集(学角色系统 `RoleApiSurfaceTest` 的"只增不改"纪律,§7.2、§0.1)。
 2. **第三方扩展通路**:第三方插件不改我们的 jar,经 `getServicesManager().register(MatchModeProvider.class, …)` 注册模式(§13.4);我们监听 `ServiceRegisterEvent` 收录(`build()` + `verifyDependencies`,坏模板跳过并 SEVERE),`ServiceUnregisterEvent` 摘除并让相关会话回退 fallback;A9 刻意限制(聚合根 build 后不可变、不能给已注册模式追加组件、要变体就注册新 id,§0.2-A9)写进 api javadoc;交付示例工程 `TheirPlugin`。
 3. **旧插件替换**(7.3 迁玩法线:SHDF 迁移线,实现见 `Shdf具体玩法设计案/施工计划/7.3-旧插件迁移替换.md`;框架侧承接其前置 7.1/7.2 全绿):交付旧图配置 → `maps/*.yml`(+`modes/*.yml` 草稿)的迁移脚本与字段映射表;给出 `SHDFGamePlugin` 停用清单与回滚预案;新老并行跑一局对比一致;声明数据不迁移(旧插件零持久化,§0.1)。
 4. **发布**:48 条验收(§16.2:40 + ★41~★46/★51~★55,再减 ★10~★12(★v1.3 归宿主线),截至本阶段;★47~★50 属阶段8,见总览 §1)逐条执行并留记录;5 个压测场景演练;发布前 checklist(shadow jar 产物核对(★v1.3:框架 jar **零 DB 依赖**,HikariCP/mysql shade 项废止)、build→runServer 闭环、plugin.yml/api-version、版本号策略)。
@@ -26,7 +26,7 @@
 
 | 编号 | 标题 | 核心产出 | 出口验收 |
 |---|---|---|---|
-| 7.1 | MiniGameApi 冻结面 | `api/MiniGameApi`(10 方法,§7.1)+ `MiniGameApiImpl`(薄委托 SessionService/Registry;★v1.3:原「/PersistencePort」委托项随 R1 悬置——查战绩两方法落地不含 DB 依赖项,回填裁决 21 §6-Q1)+ `api/view/` 三个不可变 record + ServicesManager 注册 + `MiniGameApiSurfaceTest` | ★19 全绿;`LayeringTest#apiDependsOnlyOnEngine` 不红;runServer 上 `load(MiniGameApi.class)` 非 null |
+| 7.1 | HydrokarbsApi 冻结面 | `api/HydrokarbsApi`(10 方法,§7.1)+ `HydrokarbsApiImpl`(薄委托 SessionService/Registry;★v1.3:原「/PersistencePort」委托项随 R1 悬置——查战绩两方法落地不含 DB 依赖项,回填裁决 21 §6-Q1)+ `api/view/` 三个不可变 record + ServicesManager 注册 + `HydrokarbsApiSurfaceTest` | ★19 全绿;`LayeringTest#apiDependsOnlyOnEngine` 不红;runServer 上 `load(HydrokarbsApi.class)` 非 null |
 | 7.2 | 第三方注册与扩展 | `listener/ProviderServiceListener`(ServiceRegisterEvent/ServiceUnregisterEvent)+ `MatchModeRegistry` 运行期收录/摘除 + A9 与第三方约束 javadoc + 示例工程 `examples/TheirPlugin` + `ThirdPartyModeRegistrationTest` | ★20;假插件出现在 `modes()` 目录、被大厅投票池列出、可被 switchMode 选中;卸载后目录摘除且会话回退 |
 | 7.3 | 旧插件迁移替换(玩法线:SHDF 迁移线,迁 Shdf 侧) | 实现与产出全份见 `Shdf具体玩法设计案/施工计划/7.3-旧插件迁移替换.md`(迁移脚本与 golden test、新配置草稿、迁移报告、SHDFGamePlugin 停用清单与回滚预案,原文逐字随迁) | 新老并行跑一局对比表逐项一致(P8,随 Shdf 侧);框架侧承接:前置 7.1/7.2 全绿 |
 | 7.4 | 全量验收与发布 | 全量验收逐条执行记录表 + 5 压测场景记录 + 发布前 checklist(shadow jar 产物核对——★v1.3:框架 jar 零 DB 依赖,HikariCP/mysql shade 项废止、build→runServer 闭环、版本号策略)+ 回滚预案 | §16.2 全表(截至本阶段,★v1.3:★10~★12 归宿主线,48 条)逐条勾;产物核对通过;回滚预案演练一次 |
@@ -51,7 +51,7 @@
 
 | 交付物 | 承诺 |
 |---|---|
-| 7.1 api 包 | `MiniGameApi` 方法集**只增不改**(§7.2 冻结纪律);值对象不可变快照,不泄漏引擎活实例 |
+| 7.1 api 包 | `HydrokarbsApi` 方法集**只增不改**(§7.2 冻结纪律);值对象不可变快照,不泄漏引擎活实例 |
 | 7.2 注册面 | 第三方模式注册/摘除生命周期(收录→目录→可切换→卸载回退)与 `TheirPlugin` 可编译可运行的参照实现 |
 | 7.3 迁移工具(迁 Shdf 侧) | 交付随玩法线(见 `Shdf具体玩法设计案/施工计划/7.3-旧插件迁移替换.md`);对外承诺不变:服主按停用清单操作可回滚 |
 | 7.4 发布 | 40 条验收记录(§16.2 至 7.4 止:★1~★40;★41~★55 由 7.5/8.1 首建后随发布复验) + 压测记录 + 发布 checklist,作为 v(§12.1 版本号)发布的放行依据 |
@@ -72,4 +72,4 @@
 
 > 施工前置复核(2026-10-25)发现的待裁决项;裁决前按登记口径执行,在 7.1 施工落笔时定案,不由施工文档拍死。
 
-1. **api 快照 record `SessionView` 与引擎既有接口 `engine/port/SessionView` 撞名**(2026-10-25 登记):7.1 拟交付的 `api/view/SessionView`(不可变快照 record,§7.1)与 2.6 已交付并在用的 `engine/port/SessionView`(实例侧只读会话视图,★29 `SessionComponentAccessTest` 在用)同名。**倾向:api 侧改名 `SessionInfo`**(与 `MatchModeInfo`/`MapInfo` 命名对齐;引擎侧接口不动,★29 零波及)。**7.1 施工落笔时裁决**:若改名,`MiniGameApi` 方法签名、`MiniGameApiSurfaceTest` 冻结清单与 7.1 文档全部按 `SessionInfo` 记——冻结面尚未首建,无既有消费者破坏面(7.1 文档已加同款待裁决注,不逐处重复)。
+1. **api 快照 record `SessionView` 与引擎既有接口 `engine/port/SessionView` 撞名**(2026-10-25 登记):7.1 拟交付的 `api/view/SessionView`(不可变快照 record,§7.1)与 2.6 已交付并在用的 `engine/port/SessionView`(实例侧只读会话视图,★29 `SessionComponentAccessTest` 在用)同名。**倾向:api 侧改名 `SessionInfo`**(与 `MatchModeInfo`/`MapInfo` 命名对齐;引擎侧接口不动,★29 零波及)。**7.1 施工落笔时裁决**:若改名,`HydrokarbsApi` 方法签名、`HydrokarbsApiSurfaceTest` 冻结清单与 7.1 文档全部按 `SessionInfo` 记——冻结面尚未首建,无既有消费者破坏面(7.1 文档已加同款待裁决注,不逐处重复)。

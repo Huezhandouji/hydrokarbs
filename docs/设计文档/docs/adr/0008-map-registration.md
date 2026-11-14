@@ -12,7 +12,7 @@ v1.1 把框架拆为独立插件后,地图的**打包归属**清楚了(玩法图
 
 ## 决策
 
-1. **显式注册 API**:`MiniGameApi#registerMap(Plugin, MapDefinition)` / `unregisterMap(Plugin, String)`(API_VERSION 2→3,只增不改)。与能力标签注册(D4 of 19)同款形状:显式调用、携带提供方插件、结构化错误当场可感。
+1. **显式注册 API**:`HydrokarbsApi#registerMap(Plugin, MapDefinition)` / `unregisterMap(Plugin, String)`(API_VERSION 2→3,只增不改)。与能力标签注册(D4 of 19)同款形状:显式调用、携带提供方插件、结构化错误当场可感。
 2. **地图交成品,不交工厂**:`MapDefinition` 是纯静态值(无行为、无依赖图、无框架注入配置、无 reload 重建)——模式侧"必须交工厂"的三大理由在此均不成立,直接注册建好的实例是安全的。不提供 `MapProvider` 工厂形态。
 3. **双通道汇入单点**:文件装载(`maps/*.yml` 启动扫描)与显式注册汇入 `MapRegistry` 同一私有 `register()`,同一命名空间查重——注册语义只有一份。
 4. **模板落盘约定不变**:解析路径仍为框架数据目录 `maps/templates/<mapId>/`;形态 B 下宿主 onEnable 先解包(`saveResource`)再注册,注册期校验目录存在。19-D1 的"随玩法 jar 分发"描述打包归属,注册+解包是其发现机制,两者不冲突。
@@ -29,5 +29,5 @@ v1.1 把框架拆为独立插件后,地图的**打包归属**清楚了(玩法图
 ## 后果
 
 - 正:形态 B 地图发现有了与模式对称的机制;活动图/临时图成为一等公民;注册错误当场可感。
-- 负:宿主多一步"解包落盘"时序义务(14.39);API 面再增两方法(冻结面扩张,`MiniGameApiSurfaceTest`/`ApiSurfaceTest` 快照随 7.5 更新)。
+- 负:宿主多一步"解包落盘"时序义务(14.39);API 面再增两方法(冻结面扩张,`HydrokarbsApiSurfaceTest`/`ApiSurfaceTest` 快照随 7.5 更新)。
 - 未决移交:20 §6(Q1 模板路径字段 / Q2 工厂形态 / Q3 MapInfo 来源标注)。

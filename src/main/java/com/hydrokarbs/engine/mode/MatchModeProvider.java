@@ -5,7 +5,7 @@ import com.hydrokarbs.engine.session.MatchModeConfig;
 /**
  * 模式 SPI 工厂接口(07-公共API §7.2;13-扩展步骤 §13.4):注册工厂而非成品。
  * 聚合根 {@link MatchMode} 是 final 类,Builder 即声明语言,本接口即 SPI;
- * 第三方经 {@code MiniGameApi#registerMode} 注册(★v1.6),框架 build()
+ * 第三方经 {@code HydrokarbsApi#registerMode} 注册(★v1.6),框架 build()
  * (内含注册前闸 verifyDependencies,坏声明进不了注册表,§2.6)。
  * 参照实现:{@code examples/TheirPlugin}。
  *

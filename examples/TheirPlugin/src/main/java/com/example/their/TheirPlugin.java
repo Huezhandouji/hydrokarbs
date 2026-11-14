@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -21,11 +22,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.hydrokarbs.api.EventSubscription;
-import com.hydrokarbs.api.MiniGameApi;
+import com.hydrokarbs.api.HydrokarbsApi;
 import com.hydrokarbs.api.SessionEventView;
+import com.hydrokarbs.api.SessionHandle;
 import com.hydrokarbs.api.SessionRecipe;
 import com.hydrokarbs.api.view.MapInfo;
-import com.hydrokarbs.api.view.SessionInfo;
 import com.hydrokarbs.engine.AttributeBag;
 import com.hydrokarbs.engine.component.SessionComponent;
 import com.hydrokarbs.engine.session.JoinResult;
@@ -34,7 +35,7 @@ import com.hydrokarbs.map.MapDefinition;
 
 /**
  * 第三方消费样例插件(13-扩展步骤 §13.4/§13.10/§13.11 落地版):真实消费
- * {@link MiniGameApi} 面——成员操作、事件订阅、SessionRecipe 建会话、注册式地图
+ * {@link HydrokarbsApi} 面——成员操作、事件订阅、SessionRecipe 建会话、注册式地图
  * (解包到本插件数据目录,★v1.8)、模式与会话组件显式注册(★v1.6)、api 缺席拒载
  * (版本协商面已于 ★v1.14/32 号退场)、句柄只在实例字段(14.38)、禁 shade 断言
  * (14.35);外部能力 = 会话组件桥接({@link TheirSessionComponent})。
@@ -62,13 +63,13 @@ public final class TheirPlugin extends JavaPlugin {
     static final List<SessionComponent.Specification<?>> SESSION_COMPONENT_SPECS =
             List.of(new TheirSessionComponent.Spec());
 
-    private MiniGameApi api;
+    private HydrokarbsApi api;
     /** 订阅句柄只在插件实例字段中持有(14.38;onDisable 显式 close)。 */
     private EventSubscription eventSubscription;
 
     @Override
     public void onEnable() {
-        api = getServer().getServicesManager().load(MiniGameApi.class);
+        api = getServer().getServicesManager().load(HydrokarbsApi.class);
         if (api == null) {                  // 框架缺席 → 拒载不崩服(版本协商面已退场,★v1.14/32 号)
             getLogger().severe("Hydrokarbs missing, disabling " + getName());
             setEnabled(false);
@@ -182,11 +183,25 @@ public final class TheirPlugin extends JavaPlugin {
         });
     }
 
-    /** D2 编排:先出局(hub 出局,幂等;LeaveReason 仅 QUIT/KICK 两值,§3.2)再入局(含裁决;Rejected 就地提示,§7.5 示例一)。 */
+    /**
+     * D2 编排:先出局(hub 出局,幂等;LeaveReason 仅 QUIT/KICK 两值,§3.2)再入局
+     * (含裁决;Rejected 就地提示,§7.5 示例一)。★v1.15/33 号成员操作句柄化:
+     * 出局经 {@code sessionOf} 解析现属句柄后 {@code leave}(会话域守卫在句柄内);
+     * 入局先 {@code session} 解析目标句柄——id 不存在 → empty(33 号语义迁移:原
+     * joinSession 内 Rejected 前移为解析点同步早失败),按原「入场被拒」路径提示
+     * (detail 沿用引擎措辞)——再 {@code join}(引擎裁决原样透传)。
+     */
     private int joinCommand(CommandContext<CommandSourceStack> ctx, String sessionId) {
         Player player = (Player) ctx.getSource().getSender();
-        api.leaveSession(player.getUniqueId(), LeaveReason.KICK);
-        JoinResult result = api.joinSession(sessionId, player.getUniqueId());
+        api.sessionOf(player.getUniqueId())
+                .ifPresent(current -> current.leave(player.getUniqueId(), LeaveReason.KICK));
+        Optional<SessionHandle> target = api.session(sessionId);
+        if (target.isEmpty()) {
+            player.sendMessage(Component.text("入场被拒: 会话不存在: " + sessionId,
+                    NamedTextColor.RED));
+            return 0;
+        }
+        JoinResult result = target.get().join(player.getUniqueId());
         if (result instanceof JoinResult.Rejected rejected) {
             player.sendMessage(Component.text("入场被拒: " + rejected.detail(), NamedTextColor.RED));
             return 0;
@@ -195,20 +210,21 @@ public final class TheirPlugin extends JavaPlugin {
         return 1;
     }
 
-    /** D2:出局(幂等,不在会话 = no-op)。 */
+    /** D2:出局(幂等,不在会话 = no-op)。★v1.15/33 号:经 sessionOf 解析现属句柄后 leave(会话域守卫在句柄内)。 */
     private int leaveCommand(CommandContext<CommandSourceStack> ctx) {
         Player player = (Player) ctx.getSource().getSender();
-        api.leaveSession(player.getUniqueId(), LeaveReason.KICK);
+        api.sessionOf(player.getUniqueId())
+                .ifPresent(handle -> handle.leave(player.getUniqueId(), LeaveReason.KICK));
         player.sendMessage(Component.text("已移出当前会话(若在)", NamedTextColor.GREEN));
         return 1;
     }
 
-    /** D14 通道二:SessionRecipe 单次建会话(查重/缺依赖响亮拒,装配期失败就地提示)。 */
+    /** D14 通道二:SessionRecipe 单次建会话(查重/缺依赖响亮拒,装配期失败就地提示)。★v1.15/33 号:createSession 返回句柄。 */
     private int recipeCommand(CommandContext<CommandSourceStack> ctx, String modeId, String mapId) {
         Player player = (Player) ctx.getSource().getSender();
         try {
-            SessionInfo info = api.createSession(SessionRecipe.of(modeId, mapId));
-            player.sendMessage(Component.text("会话已创建: " + info.sessionId()
+            SessionHandle handle = api.createSession(SessionRecipe.of(modeId, mapId));
+            player.sendMessage(Component.text("会话已创建: " + handle.sessionId()
                     + "(随 dissolve 全灭;D14 通道二)", NamedTextColor.GREEN));
             return 1;
         } catch (RuntimeException rejected) {

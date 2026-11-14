@@ -8,7 +8,7 @@ import com.hydrokarbs.engine.component.SessionComponent;
 
 /**
  * 会话配方:单次贡献的建会话声明(D14 通道二;§7.3「受限开放」)——
- * {@link MiniGameApi#createSession} 的唯一参数形态(★v1.4;便捷工厂 {@link #of})。
+ * {@link HydrokarbsApi#createSession} 的唯一参数形态(★v1.4;便捷工厂 {@link #of})。
  *
  * <p><b>合并序(D14;装配点唯一不变)</b>:已收录 provider 贡献(注册序,通道一)→
  * {@code extraComponents}——<b>贡献只发生在会话创建时,无运行期增删</b>;模式仍

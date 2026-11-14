@@ -30,4 +30,4 @@ v2 完成了会话化(Session + switchMode + 大厅模式化),但 `Mode` 仍是�
 
 - **正面**:新增模式从"实现接口"降为"填表"(CTF 估行数 150~250 → 120~200,且无生命周期代码);引擎代码量净减(少两个包);"大厅无特权"更强(极简大厅=少几行 addComponent,无开关参数);与角色系统共用同一套架构心智,两边代码风格互为参照。
 - **负面/成本**:v2 术语再改一轮(ModePlan 删除、Component→ModeComponent 等)——框架未动工,零成本窗口关闭前完成;聚合根与 svc 的方法/成员集需要测试冻结(`AggregatePurityTest`/`InstanceServicesMembersTest`),否则会"顺手"回胖;组件间协作风俗从"上下文找"改为"组件读口",初学者有适应成本。
-- **不可逆点**:一旦实现落地并发布 `MiniGameApi`,`Mode`/`ModeComponent`/`InstanceServices` 进入公共词汇;引擎三迁若日后回退(把 Phase 拉回引擎)将同时违反 `EnginePurityTest` 与已发布的组件公共面——本 ADR 即为该回退的预先否决。
+- **不可逆点**:一旦实现落地并发布 `HydrokarbsApi`,`Mode`/`ModeComponent`/`InstanceServices` 进入公共词汇;引擎三迁若日后回退(把 Phase 拉回引擎)将同时违反 `EnginePurityTest` 与已发布的组件公共面——本 ADR 即为该回退的预先否决。

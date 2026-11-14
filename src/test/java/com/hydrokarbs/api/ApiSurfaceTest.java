@@ -66,7 +66,7 @@ import com.hydrokarbs.api.view.MatchModeInfo;
 import com.hydrokarbs.api.view.SessionInfo;
 
 /**
- * API 编译面封闭(★44;07 §7.2):双断言——①{@code MiniGameApi} 签名只引用
+ * API 编译面封闭(★44;07 §7.2):双断言——①{@code HydrokarbsApi} 签名只引用
  * 白名单类型 + JDK + Bukkit/Adventure 平台原语;②白名单公开签名<b>只增不改</b>
  * (反射快照与 {@link #BASELINE} 全等;删/改即红,新增须追加基线行并说明)。
  *
@@ -80,8 +80,10 @@ class ApiSurfaceTest {
 
     /** 白名单逐包清单(出处见类注;顺序 = 注释块序,无语义)。 */
     private static final List<Class<?>> WHITELIST = List.of(
-            // ── api/**(07 §7.1 全部公开类型;★v1.6 起 SessionComponentProvider 出册) ──
-            MiniGameApi.class, EventSubscription.class, SessionRecipe.class,
+            // ── api/**(07 §7.1 全部公开类型;★v1.6 起 SessionComponentProvider 出册;
+            //    ★v1.15/33 号 SessionHandle 入册——控制面句柄,ADR-0021) ──
+            HydrokarbsApi.class, EventSubscription.class, SessionRecipe.class,
+            SessionHandle.class,
             SessionEventView.class,
             SessionEventView.Created.class, SessionEventView.MemberJoined.class,
             SessionEventView.MemberLeft.class, SessionEventView.MemberReconnected.class,
@@ -136,11 +138,11 @@ class ApiSurfaceTest {
             //    metadata 词料容器归 engine 根 AttributeBag) ──
             MapDefinition.class);
 
-    // ── 断言 ①:MiniGameApi 签名零非白名单类型(★44 前半) ────────────────
+    // ── 断言 ①:HydrokarbsApi 签名零非白名单类型(★44 前半) ────────────────
 
     @Test
     void apiMethodSignaturesReferenceOnlyWhitelistTypes() {
-        for (Method method : MiniGameApi.class.getDeclaredMethods()) {
+        for (Method method : HydrokarbsApi.class.getDeclaredMethods()) {
             assertReferencedTypesAllowed(method.getName() + " 返回", method.getGenericReturnType());
             for (Type parameter : method.getGenericParameterTypes()) {
                 assertReferencedTypesAllowed(method.getName() + " 参数", parameter);
@@ -205,28 +207,30 @@ class ApiSurfaceTest {
 
     // ── 断言 ②:白名单公开签名快照只增不改(★44 后半;首建基线 2026-10-25) ──
 
-    /** 首建快照文本(2026-10-25);各版本快照重录沿革见 24/25/26/30/31/32 号修正案;
-     *  本次 = 删除 MatchModeMeta、元数据改 AttributeBag 承载(基线行同步重录)。
+    /** 首建快照文本(2026-10-25);各版本快照重录沿革见 24/25/26/30/31/32/33 号修正案;
+     *  本次 = ★v1.15/33 号(ADR-0021):三法迁 SessionHandle(3 行删)、createSession
+     *  返回句柄(1 行重录)、SessionHandle 公开面 5 行新增(接口无 equals/hashCode
+     *  合成公开行);sessionOf/session/sessions 泛型实参变化不显于快照行(getReturnType
+     *  归一盲区,HydrokarbsApiImplTest 补断言),行面不动。SessionInfo 行不动。
+     *  ★v1.16/34 号增量:HydrokarbsApi#leaveSession(UUID):boolean 1 行追加。
      *  由 {@code snapshotLines()} 同算法生成后粘贴;须先于 BASELINE 声明。 */
     private static final String BASELINE_TEXT = """
 com.hydrokarbs.api.EventSubscription#close():void
-com.hydrokarbs.api.MiniGameApi#createSession(com.hydrokarbs.api.SessionRecipe):com.hydrokarbs.api.view.SessionInfo
-com.hydrokarbs.api.MiniGameApi#joinSession(java.lang.String,java.util.UUID):com.hydrokarbs.engine.session.JoinResult
-com.hydrokarbs.api.MiniGameApi#leaveSession(java.util.UUID,com.hydrokarbs.engine.session.LeaveReason):void
-com.hydrokarbs.api.MiniGameApi#maps():java.util.List
-com.hydrokarbs.api.MiniGameApi#mode(java.lang.String):java.util.Optional
-com.hydrokarbs.api.MiniGameApi#modes():java.util.List
-com.hydrokarbs.api.MiniGameApi#registerMap(org.bukkit.plugin.Plugin,com.hydrokarbs.map.MapDefinition):com.hydrokarbs.api.view.MapInfo
-com.hydrokarbs.api.MiniGameApi#registerMode(org.bukkit.plugin.Plugin,com.hydrokarbs.engine.mode.MatchModeProvider):com.hydrokarbs.api.view.MatchModeInfo
-com.hydrokarbs.api.MiniGameApi#registerSessionComponents(org.bukkit.plugin.Plugin,java.util.List):void
-com.hydrokarbs.api.MiniGameApi#session(java.lang.String):java.util.Optional
-com.hydrokarbs.api.MiniGameApi#sessionOf(java.util.UUID):java.util.Optional
-com.hydrokarbs.api.MiniGameApi#sessions():java.util.List
-com.hydrokarbs.api.MiniGameApi#subscribeSessionEvents(java.util.function.Consumer):com.hydrokarbs.api.EventSubscription
-com.hydrokarbs.api.MiniGameApi#switchMode(java.lang.String,com.hydrokarbs.engine.session.MatchModeSelection,com.hydrokarbs.engine.session.Handoff):java.util.concurrent.CompletableFuture
-com.hydrokarbs.api.MiniGameApi#unregisterMap(org.bukkit.plugin.Plugin,java.lang.String):void
-com.hydrokarbs.api.MiniGameApi#unregisterMode(org.bukkit.plugin.Plugin,java.lang.String):void
-com.hydrokarbs.api.MiniGameApi#unregisterSessionComponents(org.bukkit.plugin.Plugin):void
+com.hydrokarbs.api.HydrokarbsApi#createSession(com.hydrokarbs.api.SessionRecipe):com.hydrokarbs.api.SessionHandle
+com.hydrokarbs.api.HydrokarbsApi#leaveSession(java.util.UUID):boolean
+com.hydrokarbs.api.HydrokarbsApi#maps():java.util.List
+com.hydrokarbs.api.HydrokarbsApi#mode(java.lang.String):java.util.Optional
+com.hydrokarbs.api.HydrokarbsApi#modes():java.util.List
+com.hydrokarbs.api.HydrokarbsApi#registerMap(org.bukkit.plugin.Plugin,com.hydrokarbs.map.MapDefinition):com.hydrokarbs.api.view.MapInfo
+com.hydrokarbs.api.HydrokarbsApi#registerMode(org.bukkit.plugin.Plugin,com.hydrokarbs.engine.mode.MatchModeProvider):com.hydrokarbs.api.view.MatchModeInfo
+com.hydrokarbs.api.HydrokarbsApi#registerSessionComponents(org.bukkit.plugin.Plugin,java.util.List):void
+com.hydrokarbs.api.HydrokarbsApi#session(java.lang.String):java.util.Optional
+com.hydrokarbs.api.HydrokarbsApi#sessionOf(java.util.UUID):java.util.Optional
+com.hydrokarbs.api.HydrokarbsApi#sessions():java.util.List
+com.hydrokarbs.api.HydrokarbsApi#subscribeSessionEvents(java.util.function.Consumer):com.hydrokarbs.api.EventSubscription
+com.hydrokarbs.api.HydrokarbsApi#unregisterMap(org.bukkit.plugin.Plugin,java.lang.String):void
+com.hydrokarbs.api.HydrokarbsApi#unregisterMode(org.bukkit.plugin.Plugin,java.lang.String):void
+com.hydrokarbs.api.HydrokarbsApi#unregisterSessionComponents(org.bukkit.plugin.Plugin):void
 com.hydrokarbs.api.SessionEventView#tick():long
 com.hydrokarbs.api.SessionEventView$ComponentQuarantined#cause():java.lang.String
 com.hydrokarbs.api.SessionEventView$ComponentQuarantined#componentId():java.lang.String
@@ -280,6 +284,11 @@ com.hydrokarbs.api.SessionEventView$ModeSwitchStarted#session():com.hydrokarbs.e
 com.hydrokarbs.api.SessionEventView$ModeSwitchStarted#tick():long
 com.hydrokarbs.api.SessionEventView$ModeSwitchStarted#to():java.lang.String
 com.hydrokarbs.api.SessionEventView$ModeSwitchStarted#toString():java.lang.String
+com.hydrokarbs.api.SessionHandle#info():java.util.Optional
+com.hydrokarbs.api.SessionHandle#join(java.util.UUID):com.hydrokarbs.engine.session.JoinResult
+com.hydrokarbs.api.SessionHandle#leave(java.util.UUID,com.hydrokarbs.engine.session.LeaveReason):void
+com.hydrokarbs.api.SessionHandle#sessionId():java.lang.String
+com.hydrokarbs.api.SessionHandle#switchMode(com.hydrokarbs.engine.session.MatchModeSelection,com.hydrokarbs.engine.session.Handoff):java.util.concurrent.CompletableFuture
 com.hydrokarbs.api.SessionRecipe#equals(java.lang.Object):boolean
 com.hydrokarbs.api.SessionRecipe#extraComponents():java.util.List
 com.hydrokarbs.api.SessionRecipe#hashCode():int

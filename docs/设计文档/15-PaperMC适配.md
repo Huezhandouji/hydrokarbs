@@ -153,7 +153,7 @@ public final class YamlCodec {
    (★v1.4:前半句「单张地图失败只跳过该图」随文件式装载退场失效——地图不进配置装载,仅注册通道;配置/模式文件解析失败经 `ConfigException` 响亮口径,22 号)
 
 **热重载**:`/sm reload` 分级:`config`(引擎/会话;新会话生效)/ `modes`(含 lobby.yml;进行中实例不受影响)。虚拟线程解析(仅 config/modes)→ 回主线程后调用 `loadAll` 换引用。(★v1.4:原 `maps` 级 reload 随文件式装载退场——地图仅注册通道,宿主"reload" = `unregisterMap` + `registerMap`(或整插件重载,走 PluginDisableEvent 摘除;20-D5 口径,22 号)。(注:modes 一级涉及的 lobby.yml 属 SHDF 玩法线,见 Shdf具体玩法设计案/04、05)
-> ★v1.2 注(20-D5;★v1.4 就地修订,22 号;★v1.8 就地注,26 号):~~`maps` 级 reload **只触碰文件式地图**~~(**★v1.4:`maps` 级 reload 随文件式装载退场,该分级随之取消——地图仅注册通道**);注册式地图(经 `MiniGameApi#registerMap`)向来不经 reload——声明所有权在插件,宿主"reload" = `unregisterMap` + `registerMap`(或整插件重载,走 PluginDisableEvent 摘除)。**模板落盘口径 ★v1.8 改写(26 号)**:~~模板解析路径仍为框架数据目录 `maps/templates/<mapId>/`~~——该约定退场,世界目录 = 声明自带 `worldDirectoryPath`(构造期规范化为绝对路径),提供方**注册前自行落盘就位**(先落盘世界目录 → 构造 MapDefinition → registerMap;注册期校验直验该路径存在且为目录,缺失/非目录响亮抛带完整绝对路径,14.39 新口径)。注册式地图不经 reload 口径复核不变。
+> ★v1.2 注(20-D5;★v1.4 就地修订,22 号;★v1.8 就地注,26 号):~~`maps` 级 reload **只触碰文件式地图**~~(**★v1.4:`maps` 级 reload 随文件式装载退场,该分级随之取消——地图仅注册通道**);注册式地图(经 `HydrokarbsApi#registerMap`)向来不经 reload——声明所有权在插件,宿主"reload" = `unregisterMap` + `registerMap`(或整插件重载,走 PluginDisableEvent 摘除)。**模板落盘口径 ★v1.8 改写(26 号)**:~~模板解析路径仍为框架数据目录 `maps/templates/<mapId>/`~~——该约定退场,世界目录 = 声明自带 `worldDirectoryPath`(构造期规范化为绝对路径),提供方**注册前自行落盘就位**(先落盘世界目录 → 构造 MapDefinition → registerMap;注册期校验直验该路径存在且为目录,缺失/非目录响亮抛带完整绝对路径,14.39 新口径)。注册式地图不经 reload 口径复核不变。
 > ★v4 未决(变更指示 §11-Q4):**会话组件热替换/热重载语义**——第一版**不支持**:本节三级 reload 不覆盖会话组件表(装配来源是 L0 在 `SessionService.create` 内按配置构建的 `SessionSpec.sessionComponents`,§3.8/§6.4);该未决项登记于此、待裁决,不在本版静默决定。
 >
 > ★v4.1 未决(修正案 §12-Q11):**服务热替换/热重载语义**——第一版**不支持**:进程生命周期 = 插件生命周期,本节三级 reload 不触及服务层。该未决项登记于此、待裁决,不在本版静默决定。

@@ -6,7 +6,7 @@
 
 ## 背景
 
-v1.0 的交付形态是"框架即插件工程,宿主玩法同 jar"——宿主进程内全权访问内部 API。当出现"其他插件基于框架构建"的诉求(入口牌子、全局看板、第二宿主)时,该形态暴露三个缺口:①`MiniGameApi` 冻结面缺成员操作(join/leave)与事件订阅,跨插件编排不可达;②无版本协商,双 jar 必然版本漂移;③第三方私有组件经模式夹带进入 tick 循环,信任边界未定义。
+v1.0 的交付形态是"框架即插件工程,宿主玩法同 jar"——宿主进程内全权访问内部 API。当出现"其他插件基于框架构建"的诉求(入口牌子、全局看板、第二宿主)时,该形态暴露三个缺口:①`HydrokarbsApi` 冻结面缺成员操作(join/leave)与事件订阅,跨插件编排不可达;②无版本协商,双 jar 必然版本漂移;③第三方私有组件经模式夹带进入 tick 循环,信任边界未定义。
 
 同时,拆分存在反向风险:过早物理拆分会把 API 面的全部瑕疵固化为二进制契约(Hyrum 定律),此后每次修正都是破坏性变更。
 
@@ -14,9 +14,9 @@ v1.0 的交付形态是"框架即插件工程,宿主玩法同 jar"——宿主�
 
 1. **目标形态**:框架拆为独立插件 `HydroKarbs`,玩法成为消费插件(`depend: [HydroKarbs]`);切缝即既有分层线,引擎不变式零改动(★1~★40 原样)。
 2. **两道闸门**:G1 = API 面扩充 + 单 jar 彩排(★41~★46);G2 = 物理拆分(★47~★50),**触发条件 = 首个真实跨 jar 消费者出现**(Assumption-driven,不做 hypothetical seam——与 §7.2"组件注册不开放"同一判据)。
-3. **API 面只增扩充(D2~D4)**:成员操作 `joinSession/leaveSession`;会话事件订阅 `subscribeSessionEvents`(不可变快照 + 句柄回收 + 订阅者隔离);能力标签提供方注册。**三通道不变**:服务不经 `MiniGameApi`(D10;陷阱 14.37 + ArchUnit 增款)。
+3. **API 面只增扩充(D2~D4)**:成员操作 `joinSession/leaveSession`;会话事件订阅 `subscribeSessionEvents`(不可变快照 + 句柄回收 + 订阅者隔离);能力标签提供方注册。**三通道不变**:服务不经 `HydrokarbsApi`(D10;陷阱 14.37 + ArchUnit 增款)。
 4. **API 编译面 = 白名单,非搬家**(D6):不把引擎类型移入 api/(避免 engine→api 依赖倒挂);`ApiSurfaceTest` 冻结白名单与签名快照(只增不改)。永不导出:`SessionService`、`EngineTicker`、`WorldPort`、`ServiceRegistry` 族、`bridge/**`、`data/**`。
-5. **版本协商(D7)**:`MiniGameApi.API_VERSION`(v1.0=1,v1.1=2);消费方 onEnable 检查拒载;破坏性变更至多一个次要版本双轨过渡(One-Version Rule)。
+5. **版本协商(D7)**:`HydrokarbsApi.API_VERSION`(v1.0=1,v1.1=2);消费方 onEnable 检查拒载;破坏性变更至多一个次要版本双轨过渡(One-Version Rule)。
 6. **卸载路径(D8)**:玩法插件 disable → 框架经 `PluginDisableEvent` 摘模式 → 受影响会话走既有三级回退 → 摘能力标签;框架最后 disable(既有 `EngineTicker.close()` 全量解散)。
 7. **信任边界三层(D9)**:装配期拒坏声明(既有)+ 运行期隔离(既有,跨 jar 复验)+ 单组件单 tick 预算告警(新增观测,默认 5ms;硬熔断未决 Q4)。
 8. **包根更名(D13)**:框架 `com.shdf.match` → `com.hydrokarbs.*`;宿主作为独立插件自立顶级包 `com.shdf.*`,不嵌框架命名空间(第三方伴随插件同理各用各家包根);搭 API_VERSION 1→2 的破坏性窗口一次付清,推翻 12 §12.1「历史沿用不改」口径;字符串域(Handoff 键/配置键/DB schema/能力标签)不受影响。
